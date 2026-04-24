@@ -23,8 +23,6 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface Registro {
   id: string
   created_at: string
@@ -32,13 +30,12 @@ interface Registro {
   tomo_medicamento: boolean | null
   presion_sistolica: number | null
   presion_diastolica: number | null
+  pulso: number | null
   dolor_cabeza: number | null
   mareos: boolean
   hinchazon: boolean
   notas: string | null
 }
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const EMOJIS: Record<number, string> = { 1: '😔', 2: '😕', 3: '😐', 4: '🙂', 5: '😊' }
 
@@ -52,8 +49,6 @@ function formatFechaCorta(iso: string) {
   return d.toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })
 }
 
-// ─── Nav inferior ─────────────────────────────────────────────────────────────
-
 const NAV = [
   { href: '/paciente/dashboard', label: 'Inicio', Icon: Home },
   { href: '/paciente/registrar', label: 'Registrar', Icon: ClipboardList },
@@ -62,12 +57,9 @@ const NAV = [
   { href: '/paciente/perfil', label: 'Perfil', Icon: User },
 ]
 
-// ─── Componente principal ─────────────────────────────────────────────────────
-
 export default function Historial() {
   const supabase = createClient()
   const router = useRouter()
-
   const [registros, setRegistros] = useState<Registro[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -100,7 +92,6 @@ export default function Historial() {
     )
   }
 
-  // Datos para el gráfico (orden cronológico)
   const datosGrafico = [...registros]
     .filter(r => r.presion_sistolica !== null)
     .reverse()
@@ -112,35 +103,23 @@ export default function Historial() {
 
   return (
     <div className="min-h-screen bg-[#f8faff] pb-28">
-
-      {/* Header */}
       <header className="bg-white px-5 pt-12 pb-6 shadow-sm">
         <h1 className="text-2xl font-bold text-gray-800">Mi historial</h1>
         <p className="text-base text-gray-400">Últimos 30 días</p>
       </header>
 
       <main className="px-4 pt-5 flex flex-col gap-5 max-w-lg mx-auto">
-
-        {/* Sin registros */}
         {registros.length === 0 && (
           <div className="bg-white rounded-3xl p-8 text-center shadow-sm border border-gray-100">
             <p className="text-5xl mb-4">📋</p>
-            <p className="text-xl font-bold text-gray-700 mb-2">
-              Aún no tienes registros
-            </p>
-            <p className="text-base text-gray-400 mb-6">
-              ¡Empieza hoy y tu médico podrá ver cómo estás!
-            </p>
-            <Link
-              href="/paciente/registrar"
-              className="inline-block bg-[#1a56a4] text-white text-lg font-bold px-8 py-3 rounded-2xl"
-            >
+            <p className="text-xl font-bold text-gray-700 mb-2">Aún no tienes registros</p>
+            <p className="text-base text-gray-400 mb-6">¡Empieza hoy y tu médico podrá ver cómo estás!</p>
+            <Link href="/paciente/registrar" className="inline-block bg-[#1a56a4] text-white text-lg font-bold px-8 py-3 rounded-2xl">
               Registrar ahora
             </Link>
           </div>
         )}
 
-        {/* Gráfico de presión */}
         {datosGrafico.length > 1 && (
           <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
             <div className="flex items-center gap-2 mb-4">
@@ -149,59 +128,25 @@ export default function Historial() {
             </div>
             <div className="flex gap-4 mb-3">
               <span className="flex items-center gap-1.5 text-sm text-gray-500">
-                <span className="w-3 h-3 rounded-full bg-[#1a56a4] inline-block" />
-                Sistólica
+                <span className="w-3 h-3 rounded-full bg-[#1a56a4] inline-block" /> Sistólica
               </span>
               <span className="flex items-center gap-1.5 text-sm text-gray-500">
-                <span className="w-3 h-3 rounded-full bg-[#93c5fd] inline-block" />
-                Diastólica
+                <span className="w-3 h-3 rounded-full bg-[#93c5fd] inline-block" /> Diastólica
               </span>
             </div>
             <ResponsiveContainer width="100%" height={180}>
               <LineChart data={datosGrafico} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                  dataKey="fecha"
-                  tick={{ fontSize: 11, fill: '#9ca3af' }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 11, fill: '#9ca3af' }}
-                  tickLine={false}
-                  axisLine={false}
-                  domain={['auto', 'auto']}
-                />
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: '12px',
-                    border: 'none',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                    fontSize: '14px',
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="sistolica"
-                  stroke="#1a56a4"
-                  strokeWidth={2.5}
-                  dot={{ fill: '#1a56a4', r: 4 }}
-                  name="Sistólica"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="diastolica"
-                  stroke="#93c5fd"
-                  strokeWidth={2.5}
-                  dot={{ fill: '#93c5fd', r: 4 }}
-                  name="Diastólica"
-                />
+                <XAxis dataKey="fecha" tick={{ fontSize: 11, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
+                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', fontSize: '14px' }} />
+                <Line type="monotone" dataKey="sistolica" stroke="#1a56a4" strokeWidth={2.5} dot={{ fill: '#1a56a4', r: 4 }} name="Sistólica" />
+                <Line type="monotone" dataKey="diastolica" stroke="#93c5fd" strokeWidth={2.5} dot={{ fill: '#93c5fd', r: 4 }} name="Diastólica" />
               </LineChart>
             </ResponsiveContainer>
           </div>
         )}
 
-        {/* Lista de registros */}
         {registros.length > 0 && (
           <div className="flex flex-col gap-3">
             <h2 className="text-lg font-bold text-gray-600 px-1">Registros</h2>
@@ -210,15 +155,12 @@ export default function Historial() {
             ))}
           </div>
         )}
-
       </main>
 
       <BottomNav active="/paciente/historial" />
     </div>
   )
 }
-
-// ─── Card de un registro ──────────────────────────────────────────────────────
 
 function CardRegistro({ registro: r }: { registro: Registro }) {
   const [expandido, setExpandido] = useState(false)
@@ -249,15 +191,12 @@ function CardRegistro({ registro: r }: { registro: Registro }) {
         </div>
         {r.presion_sistolica && (
           <div className="text-right">
-            <p className="text-lg font-bold text-[#1a56a4]">
-              {r.presion_sistolica}/{r.presion_diastolica}
-            </p>
+            <p className="text-lg font-bold text-[#1a56a4]">{r.presion_sistolica}/{r.presion_diastolica}</p>
             <p className="text-xs text-gray-400">mmHg</p>
           </div>
         )}
       </div>
 
-      {/* Detalles expandibles */}
       {expandido && (
         <div className="mt-3 pt-3 border-t border-gray-100 flex flex-col gap-1.5">
           {r.dolor_cabeza !== null && r.dolor_cabeza > 0 && (
@@ -267,9 +206,7 @@ function CardRegistro({ registro: r }: { registro: Registro }) {
           {r.hinchazon && <p className="text-sm text-gray-500">🫧 Hinchazón</p>}
           {r.pulso && <p className="text-sm text-gray-500">💓 Pulso: {r.pulso} bpm</p>}
           {r.notas && (
-            <p className="text-sm text-gray-500 mt-1 bg-gray-50 rounded-xl p-3">
-              📝 {r.notas}
-            </p>
+            <p className="text-sm text-gray-500 mt-1 bg-gray-50 rounded-xl p-3">📝 {r.notas}</p>
           )}
         </div>
       )}
@@ -277,19 +214,13 @@ function CardRegistro({ registro: r }: { registro: Registro }) {
   )
 }
 
-// ─── Nav inferior ─────────────────────────────────────────────────────────────
-
 function BottomNav({ active }: { active: string }) {
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around items-center h-20 px-2 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
       {NAV.map(({ href, label, Icon }) => {
         const isActive = active === href
         return (
-          <Link
-            key={href}
-            href={href}
-            className={`flex flex-col items-center gap-1 min-w-[56px] py-1 rounded-xl transition-colors ${isActive ? 'text-[#1a56a4]' : 'text-gray-400'}`}
-          >
+          <Link key={href} href={href} className={`flex flex-col items-center gap-1 min-w-[56px] py-1 rounded-xl transition-colors ${isActive ? 'text-[#1a56a4]' : 'text-gray-400'}`}>
             <Icon size={24} strokeWidth={isActive ? 2.5 : 1.8} />
             <span className={`text-xs ${isActive ? 'font-bold' : 'font-medium'}`}>{label}</span>
           </Link>
