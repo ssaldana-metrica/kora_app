@@ -71,7 +71,7 @@ export default function Documentos() {
       const { data: docs } = await supabase
         .from('documentos')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('paciente_id', user.id)
         .order('created_at', { ascending: false })
 
       const { data: meds } = await supabase

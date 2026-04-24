@@ -54,6 +54,7 @@ export default function Registrar() {
     if (!user) { router.push('/login'); return }
 
     await supabase.from('registros').insert({
+      paciente_id: user.id,
       user_id: user.id,
       bienestar_general: form.bienestar_general,
       tomo_medicamento: form.tomo_medicamento,

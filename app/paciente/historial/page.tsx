@@ -74,7 +74,7 @@ export default function Historial() {
       const { data } = await supabase
         .from('registros')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('paciente_id', user.id)
         .gte('created_at', hace30dias.toISOString())
         .order('created_at', { ascending: false })
 

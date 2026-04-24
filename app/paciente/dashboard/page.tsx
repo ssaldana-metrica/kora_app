@@ -92,7 +92,7 @@ export default function PacienteDashboard() {
       const { data: perfil } = await supabase
         .from('profiles')
         .select('nombre, email')
-        .eq('id', user.id)
+        .eq('paciente_id', user.id)
         .single()
 
       setProfile(perfil)
@@ -101,7 +101,7 @@ export default function PacienteDashboard() {
       const { data: reg } = await supabase
         .from('registros')
         .select('id, created_at, bienestar_general, tomo_medicamento')
-        .eq('user_id', user.id)
+        .eq('paciente_id', user.id)
         .gte('created_at', `${hoyISO()}T00:00:00`)
         .lte('created_at', `${hoyISO()}T23:59:59`)
         .order('created_at', { ascending: false })
