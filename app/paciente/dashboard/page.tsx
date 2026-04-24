@@ -92,7 +92,7 @@ export default function PacienteDashboard() {
       const { data: perfil } = await supabase
         .from('profiles')
         .select('nombre, email')
-        .eq('paciente_id', user.id)
+        .eq('id', user.id)  // ✅ CORRECTO
         .single()
 
       setProfile(perfil)
