@@ -9,22 +9,18 @@ export async function POST(req: NextRequest) {
   try {
     const { pacienteNombre, registros, documentos, historial } = await req.json()
 
-    // ── Construir contexto del paciente ─────────────────────────────────
-
     const total = registros.length
-    const tomados = registros.filter((r: any) => r.medicamento_tomado).length
+    const tomados = registros.filter((r: any) => r.tomo_medicamento).length  // ✅
     const adherencia = total > 0 ? Math.round((tomados / total) * 100) : 0
-
     const conPresion = registros.filter((r: any) => r.presion_sistolica)
 
-    // Resumen de cada registro para el contexto
     const resumenRegistros = registros
       .slice(0, 30)
       .map((r: any) =>
         [
           `Fecha: ${r.fecha}`,
           r.presion_sistolica ? `Presión: ${r.presion_sistolica}/${r.presion_diastolica}` : null,
-          `Medicamento: ${r.medicamento_tomado ? 'SÍ' : 'NO'}`,
+          `Medicamento: ${r.tomo_medicamento ? 'SÍ' : 'NO'}`,  // ✅
           r.dolor_cabeza ? `Dolor cabeza: ${r.dolor_cabeza}/5` : null,
           r.mareos ? 'Mareos: SÍ' : null,
           r.hinchazon ? 'Hinchazón: SÍ' : null,
@@ -47,14 +43,10 @@ HISTORIAL DE REGISTROS:
 ${resumenRegistros || 'Sin registros'}
 `.trim()
 
-    // ── Convertir historial al formato de Anthropic ──────────────────────
-
     const mensajes = historial.map((m: { role: string; content: string }) => ({
       role: m.role as 'user' | 'assistant',
       content: m.content,
     }))
-
-    // ── Llamada a Claude ─────────────────────────────────────────────────
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',

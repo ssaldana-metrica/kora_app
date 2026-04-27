@@ -15,54 +15,35 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // ── Calcular métricas para el contexto ──────────────────────────────
-
     const total = registros.length
-    const tomados = registros.filter((r: any) => r.medicamento_tomado).length
+    const tomados = registros.filter((r: any) => r.tomo_medicamento).length  // ✅
     const adherencia = Math.round((tomados / total) * 100)
 
     const conPresion = registros.filter((r: any) => r.presion_sistolica)
-    const presionPromS =
-      conPresion.length > 0
-        ? Math.round(
-            conPresion.reduce((s: number, r: any) => s + r.presion_sistolica, 0) /
-              conPresion.length
-          )
-        : null
-    const presionPromD =
-      conPresion.length > 0
-        ? Math.round(
-            conPresion.reduce((s: number, r: any) => s + r.presion_diastolica, 0) /
-              conPresion.length
-          )
-        : null
-
+    const presionPromS = conPresion.length > 0
+      ? Math.round(conPresion.reduce((s: number, r: any) => s + r.presion_sistolica, 0) / conPresion.length)
+      : null
+    const presionPromD = conPresion.length > 0
+      ? Math.round(conPresion.reduce((s: number, r: any) => s + r.presion_diastolica, 0) / conPresion.length)
+      : null
     const presionMaxS = conPresion.length > 0
       ? Math.max(...conPresion.map((r: any) => r.presion_sistolica))
       : null
 
-    const diasDolor = registros.filter(
-      (r: any) => r.dolor_cabeza && r.dolor_cabeza >= 3
-    ).length
-    const diasMareos = registros.filter((r: any) => r.mareos).length
+    const diasDolor    = registros.filter((r: any) => r.dolor_cabeza && r.dolor_cabeza >= 3).length
+    const diasMareos   = registros.filter((r: any) => r.mareos).length
     const diasHinchazon = registros.filter((r: any) => r.hinchazon).length
+    const bienestarProm = registros.reduce((s: number, r: any) => s + r.bienestar_general, 0) / total
 
-    const bienestarProm =
-      registros.reduce((s: number, r: any) => s + r.bienestar_general, 0) / total
-
-    // Último registro
     const ultimo = registros[0]
     const diasSinRegistrar = Math.floor(
       (Date.now() - new Date(ultimo.fecha).getTime()) / (1000 * 60 * 60 * 24)
     )
 
-    // Notas del paciente
     const notas = registros
       .filter((r: any) => r.notas && r.notas.trim())
       .map((r: any) => `- ${r.fecha}: "${r.notas}"`)
       .join('\n')
-
-    // ── Contexto para Claude ─────────────────────────────────────────────
 
     const contexto = `
 DATOS DEL PACIENTE: ${pacienteNombre}
@@ -94,8 +75,6 @@ ${documentos.map((d: any) => `- ${d.tipo}: ${d.nombre_archivo}`).join('\n') || '
 NOTAS DEL PACIENTE:
 ${notas || 'Sin notas'}
 `.trim()
-
-    // ── Llamada a Claude ─────────────────────────────────────────────────
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',

@@ -5,21 +5,15 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
-  Home,
-  ClipboardList,
-  FileText,
-  User,
-  Upload,
-  Pill,
-  CheckCircle2,
-  Clock,
+  Home, ClipboardList, FileText, User,
+  Upload, Pill, CheckCircle2, Clock,
 } from 'lucide-react'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ── Tipos ──────────────────────────────────────────────────────────────────
 
 interface Documento {
   id: string
-  nombre: string
+  nombre_archivo: string     // ✅ columna correcta
   tipo: string
   created_at: string
   url: string
@@ -36,17 +30,17 @@ interface Medicamento {
   created_at: string
 }
 
-// ─── Nav ──────────────────────────────────────────────────────────────────────
+// ── Nav ────────────────────────────────────────────────────────────────────
 
 const NAV = [
-  { href: '/paciente/dashboard', label: 'Inicio', Icon: Home },
-  { href: '/paciente/registrar', label: 'Registrar', Icon: ClipboardList },
-  { href: '/paciente/historial', label: 'Historial', Icon: FileText },
-  { href: '/paciente/documentos', label: 'Docs', Icon: FileText },
-  { href: '/paciente/perfil', label: 'Perfil', Icon: User },
+  { href: '/paciente/dashboard',   label: 'Inicio',    Icon: Home },
+  { href: '/paciente/registrar',   label: 'Registrar', Icon: ClipboardList },
+  { href: '/paciente/historial',   label: 'Historial', Icon: FileText },
+  { href: '/paciente/documentos',  label: 'Docs',      Icon: FileText },
+  { href: '/paciente/perfil',      label: 'Perfil',    Icon: User },
 ]
 
-// ─── Componente principal ─────────────────────────────────────────────────────
+// ── Componente principal ───────────────────────────────────────────────────
 
 export default function Documentos() {
   const supabase = createClient()
@@ -68,16 +62,18 @@ export default function Documentos() {
       if (!user) { router.push('/login'); return }
       setUserId(user.id)
 
+      // documentos usa paciente_id ✅
       const { data: docs } = await supabase
         .from('documentos')
         .select('*')
         .eq('paciente_id', user.id)
         .order('created_at', { ascending: false })
 
+      // medicamentos usa paciente_id ✅
       const { data: meds } = await supabase
         .from('medicamentos')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('paciente_id', user.id)
         .eq('activo', true)
         .order('created_at', { ascending: false })
 
@@ -111,11 +107,12 @@ export default function Documentos() {
       .from('documentos')
       .getPublicUrl(path)
 
+    // Inserta con paciente_id y nombre_archivo ✅
     const { data: doc } = await supabase
       .from('documentos')
       .insert({
-        user_id: userId,
-        nombre: file.name,
+        paciente_id: userId,          // ✅
+        nombre_archivo: file.name,    // ✅
         tipo,
         url: urlData.publicUrl,
       })
@@ -146,7 +143,7 @@ export default function Documentos() {
             const { data: meds } = await supabase
               .from('medicamentos')
               .select('*')
-              .eq('user_id', userId)
+              .eq('paciente_id', userId)   // ✅
               .eq('activo', false)
               .order('created_at', { ascending: false })
               .limit(nuevos.length)
@@ -164,13 +161,13 @@ export default function Documentos() {
     await supabase
       .from('medicamentos')
       .update({ activo: true })
-      .eq('user_id', userId)
+      .eq('paciente_id', userId)    // ✅
       .eq('activo', false)
 
     const { data: meds } = await supabase
       .from('medicamentos')
       .select('*')
-      .eq('user_id', userId)
+      .eq('paciente_id', userId)    // ✅
       .eq('activo', true)
 
     setMedicamentos(meds ?? [])
@@ -195,17 +192,15 @@ export default function Documentos() {
 
       <main className="px-4 pt-5 flex flex-col gap-5 max-w-lg mx-auto">
 
-        {/* Card subir documento */}
+        {/* Card subir */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Subir documento</h2>
-
-          {/* Selector de tipo */}
           <div className="grid grid-cols-2 gap-2 mb-5">
             {[
-              { value: 'receta', label: '📋 Receta' },
-              { value: 'examen', label: '🔬 Examen' },
+              { value: 'receta',    label: '📋 Receta' },
+              { value: 'examen',    label: '🔬 Examen' },
               { value: 'resultado', label: '📊 Resultado' },
-              { value: 'otro', label: '📄 Otro' },
+              { value: 'otro',      label: '📄 Otro' },
             ].map(({ value, label }) => (
               <button
                 key={value}
@@ -228,7 +223,6 @@ export default function Documentos() {
             onChange={handleSubir}
             className="hidden"
           />
-
           <button
             onClick={() => fileRef.current?.click()}
             disabled={subiendo}
@@ -237,7 +231,6 @@ export default function Documentos() {
             <Upload size={24} />
             {subiendo ? 'Subiendo...' : 'Seleccionar archivo'}
           </button>
-
           {tipo === 'receta' && !subiendo && (
             <p className="text-sm text-gray-400 mt-3 text-center">
               📋 Las recetas serán procesadas con IA para crear tu plan de medicación
@@ -245,7 +238,7 @@ export default function Documentos() {
           )}
         </div>
 
-        {/* Mensaje procesando IA */}
+        {/* Mensaje procesando */}
         {mensajeProcesando && (
           <div className="bg-[#e8f0fc] rounded-2xl p-5 border border-[#1a56a4]/20">
             <p className="text-[#1a56a4] font-semibold text-base">{mensajeProcesando}</p>
@@ -290,7 +283,7 @@ export default function Documentos() {
           </div>
         )}
 
-        {/* Lista de documentos */}
+        {/* Lista documentos */}
         {documentos.length > 0 && (
           <div className="flex flex-col gap-3">
             <h2 className="text-lg font-bold text-gray-600 px-1">Documentos subidos</h2>
@@ -306,28 +299,13 @@ export default function Documentos() {
                   <FileText className="text-[#1a56a4]" size={22} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-base font-bold text-gray-800 truncate">{doc.nombre}</p>
+                  {/* usa nombre_archivo ✅ */}
+                  <p className="text-base font-bold text-gray-800 truncate">{doc.nombre_archivo}</p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    {doc.tipo === 'receta' && (
-                      <span className="text-xs bg-blue-50 text-blue-600 font-medium px-2 py-0.5 rounded-full">
-                        📋 Receta
-                      </span>
-                    )}
-                    {doc.tipo === 'examen' && (
-                      <span className="text-xs bg-purple-50 text-purple-600 font-medium px-2 py-0.5 rounded-full">
-                        🔬 Examen
-                      </span>
-                    )}
-                    {doc.tipo === 'resultado' && (
-                      <span className="text-xs bg-green-50 text-green-600 font-medium px-2 py-0.5 rounded-full">
-                        📊 Resultado
-                      </span>
-                    )}
-                    {doc.tipo === 'otro' && (
-                      <span className="text-xs bg-gray-100 text-gray-600 font-medium px-2 py-0.5 rounded-full">
-                        📄 Otro
-                      </span>
-                    )}
+                    {doc.tipo === 'receta'    && <span className="text-xs bg-blue-50   text-blue-600   font-medium px-2 py-0.5 rounded-full">📋 Receta</span>}
+                    {doc.tipo === 'examen'    && <span className="text-xs bg-purple-50 text-purple-600 font-medium px-2 py-0.5 rounded-full">🔬 Examen</span>}
+                    {doc.tipo === 'resultado' && <span className="text-xs bg-green-50  text-green-600  font-medium px-2 py-0.5 rounded-full">📊 Resultado</span>}
+                    {doc.tipo === 'otro'      && <span className="text-xs bg-gray-100  text-gray-600   font-medium px-2 py-0.5 rounded-full">📄 Otro</span>}
                     <span className="text-xs text-gray-400">
                       {new Date(doc.created_at).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })}
                     </span>
