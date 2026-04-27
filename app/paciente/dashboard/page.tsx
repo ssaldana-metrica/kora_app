@@ -18,8 +18,6 @@ import {
   Plus,
 } from 'lucide-react'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface Profile {
   nombre: string
   email: string
@@ -29,7 +27,7 @@ interface Registro {
   id: string
   created_at: string
   bienestar_general: number
-  tomo_medicamento: boolean | null
+  tomo_medicamento: boolean | null  // ✅ nombre correcto
 }
 
 interface Medicamento {
@@ -39,8 +37,6 @@ interface Medicamento {
   frecuencia_horas: number
   activo: boolean
 }
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getSaludo() {
   const h = new Date().getHours()
@@ -56,8 +52,6 @@ function hoyISO() {
   return new Date().toISOString().split('T')[0]
 }
 
-// ─── Navegación inferior ──────────────────────────────────────────────────────
-
 const NAV = [
   { href: '/paciente/dashboard', label: 'Inicio', Icon: Home },
   { href: '/paciente/registrar', label: 'Registrar', Icon: ClipboardList },
@@ -65,8 +59,6 @@ const NAV = [
   { href: '/paciente/documentos', label: 'Docs', Icon: FileText },
   { href: '/paciente/perfil', label: 'Perfil', Icon: User },
 ]
-
-// ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function PacienteDashboard() {
   const supabase = createClient()
@@ -82,39 +74,34 @@ export default function PacienteDashboard() {
   useEffect(() => {
     async function cargar() {
       const { data: { user } } = await supabase.auth.getUser()
-
-      if (!user) {
-        router.push('/login')
-        return
-      }
+      if (!user) { router.push('/login'); return }
 
       // Perfil
       const { data: perfil } = await supabase
         .from('profiles')
         .select('nombre, email')
-        .eq('id', user.id)  // ✅ CORRECTO
+        .eq('id', user.id)
         .single()
 
       setProfile(perfil)
 
-      // Registro de hoy
+      // Registro de hoy — filtra por fecha (columna date) ✅
       const { data: reg } = await supabase
         .from('registros')
         .select('id, created_at, bienestar_general, tomo_medicamento')
         .eq('paciente_id', user.id)
-        .gte('created_at', `${hoyISO()}T00:00:00`)
-        .lte('created_at', `${hoyISO()}T23:59:59`)
+        .eq('fecha', hoyISO())          // ✅ usa columna 'fecha' (date)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle()
 
       setRegistroHoy(reg ?? null)
 
-      // Medicamentos activos
+      // Medicamentos activos — usa paciente_id ✅
       const { data: meds } = await supabase
         .from('medicamentos')
         .select('id, nombre, dosis, frecuencia_horas, activo')
-        .eq('user_id', user.id)
+        .eq('paciente_id', user.id)    // ✅ columna correcta
         .eq('activo', true)
 
       setMedicamentos(meds ?? [])
@@ -139,8 +126,6 @@ export default function PacienteDashboard() {
 
   return (
     <div className="min-h-screen bg-[#f8faff] pb-28">
-
-      {/* Header */}
       <header className="bg-white px-5 pt-12 pb-6 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="bg-[#e8f0fc] rounded-full p-2">
@@ -156,20 +141,16 @@ export default function PacienteDashboard() {
       </header>
 
       <main className="px-4 pt-5 flex flex-col gap-5 max-w-lg mx-auto">
-
-        {/* Card principal */}
         {registroHoy ? (
           <RegistroExistente registro={registroHoy} />
         ) : (
           <CardRegistrar />
         )}
 
-        {/* Medicamentos */}
         {medicamentos.length > 0 && (
           <CardMedicamentos medicamentos={medicamentos} registroHoy={registroHoy} />
         )}
 
-        {/* Mensaje motivacional */}
         {medicamentos.length === 0 && registroHoy && (
           <div className="bg-[#e8f0fc] rounded-2xl p-5 text-center">
             <p className="text-2xl mb-1">🌟</p>
@@ -177,25 +158,19 @@ export default function PacienteDashboard() {
             <p className="text-gray-500 text-base mt-1">Tu médico podrá ver cómo te has sentido.</p>
           </div>
         )}
-
       </main>
 
-      {/* FAB */}
       <Link
         href="/paciente/registrar"
         className="fixed bottom-24 right-5 bg-[#1a56a4] text-white rounded-full w-16 h-16 flex items-center justify-center shadow-xl active:scale-95 transition-transform z-50"
-        aria-label="Nuevo registro"
       >
         <Plus size={32} />
       </Link>
 
-      {/* Nav inferior */}
       <BottomNav active="/paciente/dashboard" />
     </div>
   )
 }
-
-// ─── Sub-componentes ──────────────────────────────────────────────────────────
 
 function CardRegistrar() {
   return (
@@ -203,9 +178,7 @@ function CardRegistrar() {
       <p className="text-xl font-semibold text-gray-700 leading-snug mb-1">
         ¿Ya registraste cómo te sientes hoy?
       </p>
-      <p className="text-base text-gray-400 mb-5">
-        Solo toma 2 minutos. Tu médico lo agradecerá 💙
-      </p>
+      <p className="text-base text-gray-400 mb-5">Solo toma 2 minutos. Tu médico lo agradecerá 💙</p>
       <Link
         href="/paciente/registrar"
         className="block w-full bg-[#22c55e] hover:bg-[#16a34a] active:scale-95 transition-all text-white text-xl font-bold py-4 rounded-2xl text-center shadow-md"

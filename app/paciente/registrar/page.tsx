@@ -5,8 +5,6 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface FormData {
   bienestar_general: number | null
   tomo_medicamento: boolean | null
@@ -33,8 +31,6 @@ const INITIAL: FormData = {
   notas: '',
 }
 
-// ─── Componente principal ─────────────────────────────────────────────────────
-
 export default function Registrar() {
   const supabase = createClient()
   const router = useRouter()
@@ -46,18 +42,16 @@ export default function Registrar() {
 
   const TOTAL_PASOS = 6
 
-  // ── Guardar en Supabase ────────────────────────────────────────────────────
-
   async function guardar() {
     setGuardando(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
 
-    await supabase.from('registros').insert({
-      paciente_id: user.id,
+    const { error } = await supabase.from('registros').insert({
+      paciente_id: user.id,          // ✅ columna correcta
       user_id: user.id,
-      bienestar_general: form.bienestar_general,
-      tomo_medicamento: form.tomo_medicamento,
+      bienestar_general: form.bienestar_general ?? 3,
+      tomo_medicamento: form.tomo_medicamento, // ✅ nombre correcto
       hora_medicamento: form.hora_medicamento || null,
       dolor_cabeza: form.dolor_cabeza,
       mareos: form.mareos,
@@ -68,11 +62,16 @@ export default function Registrar() {
       notas: form.notas || null,
     })
 
+    if (error) {
+      console.error('Error guardando registro:', error)
+      alert('Error al guardar. Intenta de nuevo.')
+      setGuardando(false)
+      return
+    }
+
     setGuardando(false)
     setListo(true)
   }
-
-  // ── Navegación ─────────────────────────────────────────────────────────────
 
   function siguiente() {
     if (paso < TOTAL_PASOS) setPaso(paso + 1)
@@ -83,8 +82,6 @@ export default function Registrar() {
     if (paso > 1) setPaso(paso - 1)
     else router.push('/paciente/dashboard')
   }
-
-  // ── Pantalla final ─────────────────────────────────────────────────────────
 
   if (listo) {
     return (
@@ -108,12 +105,8 @@ export default function Registrar() {
     )
   }
 
-  // ── Layout principal ───────────────────────────────────────────────────────
-
   return (
     <div className="min-h-screen bg-[#f8faff] flex flex-col">
-
-      {/* Header con progreso */}
       <header className="bg-white px-5 pt-12 pb-5 shadow-sm">
         <div className="flex items-center gap-4 mb-4">
           <button onClick={atras} className="text-gray-400 active:scale-90 transition-transform">
@@ -121,7 +114,6 @@ export default function Registrar() {
           </button>
           <h1 className="text-xl font-bold text-gray-700">¿Cómo estás hoy?</h1>
         </div>
-        {/* Barra de progreso */}
         <div className="flex gap-1.5">
           {Array.from({ length: TOTAL_PASOS }).map((_, i) => (
             <div
@@ -135,7 +127,6 @@ export default function Registrar() {
         <p className="text-sm text-gray-400 mt-2">Paso {paso} de {TOTAL_PASOS}</p>
       </header>
 
-      {/* Contenido del paso */}
       <main className="flex-1 px-5 pt-8 pb-4 max-w-lg mx-auto w-full">
         {paso === 1 && <Paso1 form={form} setForm={setForm} />}
         {paso === 2 && <Paso2 form={form} setForm={setForm} />}
@@ -145,7 +136,6 @@ export default function Registrar() {
         {paso === 6 && <Paso6 form={form} setForm={setForm} />}
       </main>
 
-      {/* Botón siguiente */}
       <div className="px-5 pb-10 max-w-lg mx-auto w-full">
         <button
           onClick={siguiente}
@@ -157,10 +147,7 @@ export default function Registrar() {
           )}
         </button>
         {paso < TOTAL_PASOS && (
-          <button
-            onClick={siguiente}
-            className="w-full text-center text-gray-400 text-base mt-3 py-2"
-          >
+          <button onClick={siguiente} className="w-full text-center text-gray-400 text-base mt-3 py-2">
             Saltar este paso
           </button>
         )}
@@ -169,7 +156,7 @@ export default function Registrar() {
   )
 }
 
-// ─── Paso 1: Bienestar general ────────────────────────────────────────────────
+// ─── Paso 1: Bienestar ────────────────────────────────────────────────────────
 
 function Paso1({ form, setForm }: { form: FormData; setForm: (f: FormData) => void }) {
   const opciones = [
@@ -179,12 +166,9 @@ function Paso1({ form, setForm }: { form: FormData; setForm: (f: FormData) => vo
     { valor: 4, emoji: '🙂', label: 'Bien' },
     { valor: 5, emoji: '😊', label: 'Muy bien' },
   ]
-
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">
-        ¿Cómo te sientes hoy en general?
-      </h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-2">¿Cómo te sientes hoy en general?</h2>
       <p className="text-base text-gray-400 mb-8">Toca el emoji que mejor te represente</p>
       <div className="flex justify-between gap-2">
         {opciones.map(({ valor, emoji, label }) => (
@@ -211,9 +195,7 @@ function Paso1({ form, setForm }: { form: FormData; setForm: (f: FormData) => vo
 function Paso2({ form, setForm }: { form: FormData; setForm: (f: FormData) => void }) {
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">
-        ¿Tomaste tu medicamento hoy?
-      </h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-2">¿Tomaste tu medicamento hoy?</h2>
       <p className="text-base text-gray-400 mb-8">Sé honesto, tu médico te ayuda mejor así 💙</p>
       <div className="flex gap-4 mb-6">
         <button
@@ -239,9 +221,7 @@ function Paso2({ form, setForm }: { form: FormData; setForm: (f: FormData) => vo
       </div>
       {form.tomo_medicamento === true && (
         <div className="bg-white rounded-2xl p-4 border border-gray-100">
-          <label className="text-base font-semibold text-gray-600 block mb-2">
-            ¿A qué hora lo tomaste? (opcional)
-          </label>
+          <label className="text-base font-semibold text-gray-600 block mb-2">¿A qué hora? (opcional)</label>
           <input
             type="time"
             value={form.hora_medicamento}
@@ -254,7 +234,7 @@ function Paso2({ form, setForm }: { form: FormData; setForm: (f: FormData) => vo
   )
 }
 
-// ─── Paso 3: Dolor de cabeza ──────────────────────────────────────────────────
+// ─── Paso 3: Dolor cabeza ─────────────────────────────────────────────────────
 
 function Paso3({ form, setForm }: { form: FormData; setForm: (f: FormData) => void }) {
   const opciones = [
@@ -264,12 +244,9 @@ function Paso3({ form, setForm }: { form: FormData; setForm: (f: FormData) => vo
     { valor: 3, label: 'Fuerte' },
     { valor: 4, label: 'Muy fuerte' },
   ]
-
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">
-        ¿Tuviste dolor de cabeza?
-      </h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-2">¿Tuviste dolor de cabeza?</h2>
       <p className="text-base text-gray-400 mb-8">Selecciona la intensidad</p>
       <div className="flex flex-col gap-3">
         {opciones.map(({ valor, label }) => (
@@ -295,35 +272,27 @@ function Paso3({ form, setForm }: { form: FormData; setForm: (f: FormData) => vo
 function Paso4({ form, setForm }: { form: FormData; setForm: (f: FormData) => void }) {
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">
-        ¿Sentiste mareos o hinchazón?
-      </h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-2">¿Sentiste mareos o hinchazón?</h2>
       <p className="text-base text-gray-400 mb-8">Puedes marcar ambas si aplica</p>
       <div className="flex flex-col gap-4">
-        <button
-          onClick={() => setForm({ ...form, mareos: !form.mareos })}
-          className={`w-full py-5 rounded-2xl border-2 text-xl font-semibold flex items-center gap-4 px-6 transition-all active:scale-95 ${
-            form.mareos
-              ? 'border-[#1a56a4] bg-[#e8f0fc] text-[#1a56a4]'
-              : 'border-gray-200 bg-white text-gray-700'
-          }`}
-        >
-          <span className="text-3xl">🌀</span>
-          <span>Mareos</span>
-          {form.mareos && <Check className="ml-auto text-[#1a56a4]" size={24} />}
-        </button>
-        <button
-          onClick={() => setForm({ ...form, hinchazon: !form.hinchazon })}
-          className={`w-full py-5 rounded-2xl border-2 text-xl font-semibold flex items-center gap-4 px-6 transition-all active:scale-95 ${
-            form.hinchazon
-              ? 'border-[#1a56a4] bg-[#e8f0fc] text-[#1a56a4]'
-              : 'border-gray-200 bg-white text-gray-700'
-          }`}
-        >
-          <span className="text-3xl">🫧</span>
-          <span>Hinchazón</span>
-          {form.hinchazon && <Check className="ml-auto text-[#1a56a4]" size={24} />}
-        </button>
+        {[
+          { campo: 'mareos' as const, emoji: '🌀', label: 'Mareos' },
+          { campo: 'hinchazon' as const, emoji: '🫧', label: 'Hinchazón' },
+        ].map(({ campo, emoji, label }) => (
+          <button
+            key={campo}
+            onClick={() => setForm({ ...form, [campo]: !form[campo] })}
+            className={`w-full py-5 rounded-2xl border-2 text-xl font-semibold flex items-center gap-4 px-6 transition-all active:scale-95 ${
+              form[campo]
+                ? 'border-[#1a56a4] bg-[#e8f0fc] text-[#1a56a4]'
+                : 'border-gray-200 bg-white text-gray-700'
+            }`}
+          >
+            <span className="text-3xl">{emoji}</span>
+            <span>{label}</span>
+            {form[campo] && <Check className="ml-auto text-[#1a56a4]" size={24} />}
+          </button>
+        ))}
         <button
           onClick={() => setForm({ ...form, mareos: false, hinchazon: false })}
           className={`w-full py-5 rounded-2xl border-2 text-xl font-semibold flex items-center gap-4 px-6 transition-all active:scale-95 ${
@@ -340,70 +309,42 @@ function Paso4({ form, setForm }: { form: FormData; setForm: (f: FormData) => vo
   )
 }
 
-// ─── Paso 5: Presión arterial ─────────────────────────────────────────────────
+// ─── Paso 5: Presión ──────────────────────────────────────────────────────────
 
 function Paso5({ form, setForm }: { form: FormData; setForm: (f: FormData) => void }) {
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">
-        ¿Cómo estuvo tu presión arterial?
-      </h2>
-      <p className="text-base text-gray-400 mb-8">
-        Si no te la mediste, puedes saltar este paso 👆
-      </p>
+      <h2 className="text-2xl font-bold text-gray-800 mb-2">¿Cómo estuvo tu presión arterial?</h2>
+      <p className="text-base text-gray-400 mb-8">Si no te la mediste, puedes saltar este paso 👆</p>
       <div className="flex flex-col gap-4">
-        <div className="bg-white rounded-2xl p-5 border border-gray-100">
-          <label className="text-base font-semibold text-gray-600 block mb-2">
-            Sistólica (número de arriba)
-          </label>
-          <input
-            type="number"
-            placeholder="ej: 120"
-            value={form.presion_sistolica}
-            onChange={(e) => setForm({ ...form, presion_sistolica: e.target.value })}
-            className="w-full text-2xl font-bold border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-[#1a56a4]"
-          />
-        </div>
-        <div className="bg-white rounded-2xl p-5 border border-gray-100">
-          <label className="text-base font-semibold text-gray-600 block mb-2">
-            Diastólica (número de abajo)
-          </label>
-          <input
-            type="number"
-            placeholder="ej: 80"
-            value={form.presion_diastolica}
-            onChange={(e) => setForm({ ...form, presion_diastolica: e.target.value })}
-            className="w-full text-2xl font-bold border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-[#1a56a4]"
-          />
-        </div>
-        <div className="bg-white rounded-2xl p-5 border border-gray-100">
-          <label className="text-base font-semibold text-gray-600 block mb-2">
-            Pulso (pulsaciones por minuto)
-          </label>
-          <input
-            type="number"
-            placeholder="ej: 72"
-            value={form.pulso}
-            onChange={(e) => setForm({ ...form, pulso: e.target.value })}
-            className="w-full text-2xl font-bold border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-[#1a56a4]"
-          />
-        </div>
+        {[
+          { campo: 'presion_sistolica' as const, label: 'Sistólica (número de arriba)', placeholder: 'ej: 120' },
+          { campo: 'presion_diastolica' as const, label: 'Diastólica (número de abajo)', placeholder: 'ej: 80' },
+          { campo: 'pulso' as const, label: 'Pulso (pulsaciones por minuto)', placeholder: 'ej: 72' },
+        ].map(({ campo, label, placeholder }) => (
+          <div key={campo} className="bg-white rounded-2xl p-5 border border-gray-100">
+            <label className="text-base font-semibold text-gray-600 block mb-2">{label}</label>
+            <input
+              type="number"
+              placeholder={placeholder}
+              value={form[campo]}
+              onChange={(e) => setForm({ ...form, [campo]: e.target.value })}
+              className="w-full text-2xl font-bold border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-[#1a56a4]"
+            />
+          </div>
+        ))}
       </div>
     </div>
   )
 }
 
-// ─── Paso 6: Notas libres ─────────────────────────────────────────────────────
+// ─── Paso 6: Notas ────────────────────────────────────────────────────────────
 
 function Paso6({ form, setForm }: { form: FormData; setForm: (f: FormData) => void }) {
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">
-        ¿Algo más que quieras anotar?
-      </h2>
-      <p className="text-base text-gray-400 mb-8">
-        Cualquier cosa que quieras que tu médico sepa — es opcional 😊
-      </p>
+      <h2 className="text-2xl font-bold text-gray-800 mb-2">¿Algo más que quieras anotar?</h2>
+      <p className="text-base text-gray-400 mb-8">Cualquier cosa que quieras que tu médico sepa — es opcional 😊</p>
       <textarea
         value={form.notas}
         onChange={(e) => setForm({ ...form, notas: e.target.value })}

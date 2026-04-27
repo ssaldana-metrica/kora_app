@@ -25,9 +25,10 @@ import {
 
 interface Registro {
   id: string
+  fecha: string           // ✅ columna date
   created_at: string
   bienestar_general: number | null
-  tomo_medicamento: boolean | null
+  tomo_medicamento: boolean | null  // ✅ nombre correcto
   presion_sistolica: number | null
   presion_diastolica: number | null
   pulso: number | null
@@ -68,15 +69,17 @@ export default function Historial() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
+      // ✅ filtra por columna 'fecha' (date), no created_at
       const hace30dias = new Date()
       hace30dias.setDate(hace30dias.getDate() - 30)
+      const hace30ISO = hace30dias.toISOString().split('T')[0]
 
       const { data } = await supabase
         .from('registros')
         .select('*')
         .eq('paciente_id', user.id)
-        .gte('created_at', hace30dias.toISOString())
-        .order('created_at', { ascending: false })
+        .gte('fecha', hace30ISO)        // ✅ columna fecha
+        .order('fecha', { ascending: false })
 
       setRegistros(data ?? [])
       setLoading(false)
@@ -96,7 +99,7 @@ export default function Historial() {
     .filter(r => r.presion_sistolica !== null)
     .reverse()
     .map(r => ({
-      fecha: formatFechaCorta(r.created_at),
+      fecha: formatFechaCorta(r.fecha),   // ✅ usa fecha
       sistolica: r.presion_sistolica,
       diastolica: r.presion_diastolica,
     }))
@@ -109,6 +112,7 @@ export default function Historial() {
       </header>
 
       <main className="px-4 pt-5 flex flex-col gap-5 max-w-lg mx-auto">
+
         {registros.length === 0 && (
           <div className="bg-white rounded-3xl p-8 text-center shadow-sm border border-gray-100">
             <p className="text-5xl mb-4">📋</p>
@@ -155,6 +159,7 @@ export default function Historial() {
             ))}
           </div>
         )}
+
       </main>
 
       <BottomNav active="/paciente/historial" />
@@ -174,7 +179,7 @@ function CardRegistro({ registro: r }: { registro: Registro }) {
         <div className="flex items-center gap-3">
           <span className="text-3xl">{EMOJIS[r.bienestar_general ?? 3] ?? '😐'}</span>
           <div>
-            <p className="text-base font-bold text-gray-800">{formatFecha(r.created_at)}</p>
+            <p className="text-base font-bold text-gray-800">{formatFecha(r.fecha)}</p>
             <div className="flex items-center gap-2 mt-0.5">
               {r.tomo_medicamento === true && (
                 <span className="flex items-center gap-1 text-green-600 text-xs font-medium">
