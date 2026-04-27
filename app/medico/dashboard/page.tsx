@@ -26,7 +26,7 @@ interface Paciente {
   nombre: string
   enfermedad?: string
   edad?: number
-  ultimoRegistro?: string           // ISO date string
+  ultimoRegistro?: string
   presion?: { s: number; d: number }
   tomóMedicamentoAyer?: boolean | null
   semaforo: 'verde' | 'amarillo' | 'rojo' | 'sin-datos'
@@ -49,14 +49,12 @@ function calcularSemaforo(paciente: {
 }): 'verde' | 'amarillo' | 'rojo' | 'sin-datos' {
   if (paciente.diasSinRegistrar > 30) return 'sin-datos'
 
-  // 🔴 Rojo
   if (
     paciente.diasSinRegistrar > 3 ||
     paciente.noMedicamento2DiasConsec ||
     paciente.presionAlta2Dias
   ) return 'rojo'
 
-  // 🟡 Amarillo
   if (
     paciente.diasSinRegistrar >= 2 ||
     paciente.tomóMedicamentoAyer === false ||
@@ -64,7 +62,6 @@ function calcularSemaforo(paciente: {
       (paciente.presion.s >= 130 || paciente.presion.d >= 85))
   ) return 'amarillo'
 
-  // 🟢 Verde
   return 'verde'
 }
 
@@ -82,7 +79,7 @@ function tiempoDesde(fechaISO: string): string {
   return `Hace ${Math.floor(diffDias / 7)} semanas`
 }
 
-// ── Componente tarjeta paciente ────────────────────────────────────────────
+// ── Tarjeta paciente ───────────────────────────────────────────────────────
 
 function TarjetaPaciente({ paciente }: { paciente: Paciente }) {
   const semaforoConfig = {
@@ -121,7 +118,6 @@ function TarjetaPaciente({ paciente }: { paciente: Paciente }) {
   }
 
   const cfg = semaforoConfig[paciente.semaforo]
-  const IconSemaforo = cfg.icon
 
   return (
     <Link href={`/medico/paciente/${paciente.id}`}>
@@ -129,11 +125,10 @@ function TarjetaPaciente({ paciente }: { paciente: Paciente }) {
         className={`
           relative rounded-xl border-2 ${cfg.border} ${cfg.bg}
           p-5 cursor-pointer transition-all duration-200
-          hover:shadow-md hover:-translate-y-0.5 hover:border-opacity-80
+          hover:shadow-md hover:-translate-y-0.5
           group
         `}
       >
-        {/* Semáforo badge */}
         <div className="flex items-start justify-between mb-3">
           <div>
             <h3 className="font-semibold text-gray-900 text-base leading-tight">
@@ -149,9 +144,7 @@ function TarjetaPaciente({ paciente }: { paciente: Paciente }) {
           </span>
         </div>
 
-        {/* Métricas */}
         <div className="space-y-2 mt-3">
-          {/* Último registro */}
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Clock size={14} className="text-gray-400 flex-shrink-0" />
             <span>
@@ -161,7 +154,6 @@ function TarjetaPaciente({ paciente }: { paciente: Paciente }) {
             </span>
           </div>
 
-          {/* Presión */}
           {paciente.presion ? (
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Activity size={14} className="text-gray-400 flex-shrink-0" />
@@ -186,7 +178,6 @@ function TarjetaPaciente({ paciente }: { paciente: Paciente }) {
             </div>
           )}
 
-          {/* Medicamento */}
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Pill size={14} className="text-gray-400 flex-shrink-0" />
             <span>
@@ -202,7 +193,6 @@ function TarjetaPaciente({ paciente }: { paciente: Paciente }) {
           </div>
         </div>
 
-        {/* CTA */}
         <div className="mt-4 pt-3 border-t border-gray-200 flex items-center justify-between">
           <span className="text-xs text-[#0d3d7a] font-medium">Ver detalle</span>
           <ChevronRight
@@ -227,8 +217,6 @@ export default function MedicoDashboard() {
   const [copiado, setCopiado] = useState(false)
   const [filtro, setFiltro] = useState<'todos' | 'verde' | 'amarillo' | 'rojo'>('todos')
 
-  // ── Cargar datos ──────────────────────────────────────────────────────
-
   useEffect(() => {
     cargarDatos()
   }, [])
@@ -239,7 +227,6 @@ export default function MedicoDashboard() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
-      // Perfil del médico
       const { data: perfil } = await supabase
         .from('profiles')
         .select('nombre, codigo_medico, role')
@@ -253,7 +240,6 @@ export default function MedicoDashboard() {
 
       setMedico({ nombre: perfil.nombre, codigo_medico: perfil.codigo_medico })
 
-      // Pacientes vinculados
       const { data: pacientesData } = await supabase
         .from('profiles')
         .select('id, nombre, enfermedad, fecha_nacimiento')
@@ -266,7 +252,6 @@ export default function MedicoDashboard() {
         return
       }
 
-      // Para cada paciente, obtener últimos registros
       const ahora = new Date()
       const hace30Dias = new Date(ahora.getTime() - 30 * 24 * 60 * 60 * 1000)
         .toISOString()
@@ -276,7 +261,7 @@ export default function MedicoDashboard() {
         pacientesData.map(async (p) => {
           const { data: registros } = await supabase
             .from('registros')
-            .select('fecha, presion_sistolica, presion_diastolica, medicamento_tomado')
+            .select('fecha, presion_sistolica, presion_diastolica, tomo_medicamento') // ✅ CORREGIDO
             .eq('paciente_id', p.id)
             .gte('fecha', hace30Dias)
             .order('fecha', { ascending: false })
@@ -290,7 +275,6 @@ export default function MedicoDashboard() {
             .toISOString()
             .split('T')[0]
 
-          // Días sin registrar
           let diasSinRegistrar = 0
           if (!ultimoRegistro) {
             diasSinRegistrar = 99
@@ -299,29 +283,24 @@ export default function MedicoDashboard() {
             diasSinRegistrar = Math.floor(diff / (1000 * 60 * 60 * 24))
           }
 
-          // ¿Tomó medicamento ayer?
           const registroAyer = registros?.find(r => r.fecha === ayer)
           const tomóMedicamentoAyer = registroAyer
-            ? registroAyer.medicamento_tomado
+            ? registroAyer.tomo_medicamento  // ✅ CORREGIDO
             : null
 
-          // ¿No medicamento 2 días consecutivos?
           const registroAnteayer = registros?.find(r => r.fecha === anteayer)
           const noMedicamento2DiasConsec =
-            registroAyer?.medicamento_tomado === false &&
-            registroAnteayer?.medicamento_tomado === false
+            registroAyer?.tomo_medicamento === false &&      // ✅ CORREGIDO
+            registroAnteayer?.tomo_medicamento === false     // ✅ CORREGIDO
 
-          // Presión más reciente
           const presion = ultimoRegistro?.presion_sistolica
             ? { s: ultimoRegistro.presion_sistolica, d: ultimoRegistro.presion_diastolica ?? 0 }
             : undefined
 
-          // ¿Presión alta 2 días?
           const presionAlta2Dias =
-            registros?.[0]?.presion_sistolica > 140 &&
-            registros?.[1]?.presion_sistolica > 140
+            (registros?.[0]?.presion_sistolica ?? 0) > 140 &&
+            (registros?.[1]?.presion_sistolica ?? 0) > 140
 
-          // Edad
           let edad: number | undefined
           if (p.fecha_nacimiento) {
             edad = Math.floor(
@@ -352,7 +331,6 @@ export default function MedicoDashboard() {
         })
       )
 
-      // Ordenar: rojo primero, luego amarillo, luego verde
       const orden = { rojo: 0, amarillo: 1, verde: 2, 'sin-datos': 3 }
       pacientesConDatos.sort((a, b) => orden[a.semaforo] - orden[b.semaforo])
       setPacientes(pacientesConDatos)
@@ -376,8 +354,6 @@ export default function MedicoDashboard() {
     }
   }
 
-  // ── Filtros ───────────────────────────────────────────────────────────
-
   const pacientesFiltrados =
     filtro === 'todos'
       ? pacientes
@@ -389,8 +365,6 @@ export default function MedicoDashboard() {
     rojo: pacientes.filter(p => p.semaforo === 'rojo').length,
   }
 
-  // ── Saludo ────────────────────────────────────────────────────────────
-
   function saludo() {
     const hora = new Date().getHours()
     if (hora < 12) return 'Buenos días'
@@ -399,8 +373,6 @@ export default function MedicoDashboard() {
   }
 
   const apellido = medico?.nombre?.split(' ').slice(-1)[0] ?? ''
-
-  // ── Render ─────────────────────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -416,7 +388,7 @@ export default function MedicoDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
 
-      {/* ── Header ── */}
+      {/* Header */}
       <header className="bg-[#0d3d7a] text-white shadow-lg">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
@@ -433,7 +405,6 @@ export default function MedicoDashboard() {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Botón actualizar */}
               <button
                 onClick={cargarDatos}
                 className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
@@ -441,8 +412,6 @@ export default function MedicoDashboard() {
               >
                 <RefreshCw size={16} />
               </button>
-
-              {/* Cerrar sesión */}
               <button
                 onClick={cerrarSesion}
                 className="flex items-center gap-1.5 text-sm bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition-colors"
@@ -457,7 +426,7 @@ export default function MedicoDashboard() {
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
-        {/* ── Código del médico ── */}
+        {/* Código del médico */}
         <div className="bg-white rounded-xl border border-blue-100 p-4 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
@@ -487,24 +456,23 @@ export default function MedicoDashboard() {
           </div>
         </div>
 
-        {/* ── Resumen numérico ── */}
+        {/* Resumen numérico */}
         {pacientes.length > 0 && (
           <div className="grid grid-cols-3 gap-3">
             {[
-              { color: 'emerald', label: 'Bien', count: conteos.verde, semaforo: 'verde' as const },
-              { color: 'amber', label: 'Atención', count: conteos.amarillo, semaforo: 'amarillo' as const },
-              { color: 'red', label: 'Alerta', count: conteos.rojo, semaforo: 'rojo' as const },
+              { color: 'emerald', label: 'Bien',     count: conteos.verde,    semaforo: 'verde'    as const },
+              { color: 'amber',   label: 'Atención', count: conteos.amarillo, semaforo: 'amarillo' as const },
+              { color: 'red',     label: 'Alerta',   count: conteos.rojo,     semaforo: 'rojo'     as const },
             ].map(({ color, label, count, semaforo }) => (
               <button
                 key={semaforo}
                 onClick={() => setFiltro(filtro === semaforo ? 'todos' : semaforo)}
                 className={`
-                  rounded-xl p-4 text-center border-2 transition-all
+                  rounded-xl p-4 text-center border-2 transition-all shadow-sm
                   ${filtro === semaforo
                     ? `border-${color}-400 bg-${color}-50`
                     : 'border-transparent bg-white hover:bg-gray-50'
                   }
-                  shadow-sm
                 `}
               >
                 <p className={`text-3xl font-bold text-${color}-600`}>{count}</p>
@@ -514,7 +482,7 @@ export default function MedicoDashboard() {
           </div>
         )}
 
-        {/* ── Grid de pacientes ── */}
+        {/* Grid de pacientes */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-900 flex items-center gap-2">
@@ -534,7 +502,6 @@ export default function MedicoDashboard() {
           </div>
 
           {pacientes.length === 0 ? (
-            /* Estado vacío */
             <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
               <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users size={28} className="text-[#0d3d7a]" />
@@ -571,4 +538,4 @@ export default function MedicoDashboard() {
       </main>
     </div>
   )
-}
+} 
