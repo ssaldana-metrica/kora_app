@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import {
   Document,
   Page,
@@ -10,6 +9,7 @@ import {
   PDFDownloadLink,
 } from '@react-pdf/renderer'
 import { Download, Loader2 } from 'lucide-react'
+import { trackEvent } from '@/lib/tracking'
 
 // ── Estilos ────────────────────────────────────────────────────────────────
 
@@ -300,6 +300,7 @@ export default function ExportarPDF(props: Props) {
     >
       {({ loading }) => (
         <button
+          onClick={() => trackEvent('pdf_exportado')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
             loading
               ? 'bg-gray-100 text-gray-400 cursor-wait'

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { trackEvent } from '@/lib/tracking'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -12,6 +13,8 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<'paciente' | 'medico'>('paciente')
+  const [especialidad, setEspecialidad] = useState('')
+  const [ubicacion, setUbicacion] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -20,10 +23,7 @@ export default function RegisterPage() {
     setLoading(true)
     setError('')
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-    })
+    const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
 
     if (signUpError || !data.user) {
       setError(signUpError?.message ?? 'Error al registrarse')
@@ -31,24 +31,31 @@ export default function RegisterPage() {
       return
     }
 
-    const { error: profileError } = await supabase.from('profiles').insert({
+    const profileData: Record<string, string> = {
       id: data.user.id,
       nombre,
       email,
       role,
-    })
+    }
+
+    if (role === 'medico') {
+      if (especialidad) profileData.especialidad = especialidad
+      if (ubicacion) profileData.ubicacion = ubicacion
+    }
+
+    const { error: profileError } = await supabase.from('profiles').insert(profileData)
 
     if (profileError) {
-      setError('Error al guardar el perfil')
+      setError('Error al guardar el perfil: ' + profileError.message)
       setLoading(false)
       return
     }
 
-    if (role === 'medico') {
-      router.push('/medico/dashboard')
-    } else {
-      router.push('/paciente/dashboard')
-    }
+    await trackEvent(role === 'medico' ? 'medico_crea_cuenta' : 'paciente_crea_cuenta', {
+      userId: data.user.id,
+    })
+
+    router.push(role === 'medico' ? '/medico/dashboard' : '/paciente/dashboard')
   }
 
   return (
@@ -124,6 +131,35 @@ export default function RegisterPage() {
               </button>
             </div>
           </div>
+
+          {role === 'medico' && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Especialidad <span className="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={especialidad}
+                  onChange={e => setEspecialidad(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ej: Cardiología, Medicina General..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ciudad / Clínica <span className="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={ubicacion}
+                  onChange={e => setUbicacion(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ej: Lima, Clínica San Borja..."
+                />
+              </div>
+            </>
+          )}
 
           {error && <p className="text-red-500 text-sm">{error}</p>}
 

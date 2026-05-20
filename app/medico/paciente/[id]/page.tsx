@@ -93,14 +93,23 @@ function TabResumen({
     '¿Hay alguna alerta que deba revisar?',
   ]
 
+  useEffect(() => {
+    generarResumen()
+  }, [])
+
   async function generarResumen() {
     setCargandoResumen(true)
     setResumen('')
     try {
-      const res = await fetch('/api/resumen-paciente', {
+      const res = await fetch('/api/resumenes/generar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pacienteNombre: paciente.nombre, registros, documentos }),
+        body: JSON.stringify({
+          pacienteNombre: paciente.nombre,
+          registros,
+          documentos,
+          pacienteId: paciente.id,
+        }),
       })
       const data = await res.json()
       setResumen(data.resumen || 'No se pudo generar el resumen.')
@@ -135,29 +144,23 @@ function TabResumen({
 
   return (
     <div className="space-y-6">
-      {!resumen && !cargandoResumen && (
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-8 text-center">
-          <div className="w-14 h-14 bg-[#0d3d7a] rounded-xl flex items-center justify-center mx-auto mb-4">
-            <Brain size={26} className="text-white" />
-          </div>
-          <h3 className="font-bold text-gray-900 text-lg mb-2">Resumen pre-consulta con IA</h3>
-          <p className="text-gray-500 text-sm mb-5 max-w-sm mx-auto">
-            Analiza los últimos 30 días de {paciente.nombre} y genera un resumen clínico.
-          </p>
-          <button onClick={generarResumen} className="bg-[#0d3d7a] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#0b3268] transition-colors shadow-sm">
-            Generar resumen pre-consulta
-          </button>
-        </div>
-      )}
-
       {cargandoResumen && (
-        <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
-          <Loader2 size={32} className="animate-spin text-[#0d3d7a] mx-auto mb-3" />
-          <p className="text-gray-500 text-sm">Analizando datos del paciente...</p>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="bg-[#0d3d7a] px-5 py-3 flex items-center gap-2 text-white">
+            <Brain size={16} />
+            <span className="font-semibold text-sm">Generando resumen pre-consulta…</span>
+          </div>
+          <div className="p-5 space-y-3 animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-3/4" />
+            <div className="h-4 bg-gray-200 rounded w-full" />
+            <div className="h-4 bg-gray-200 rounded w-5/6" />
+            <div className="h-4 bg-gray-200 rounded w-2/3" />
+            <div className="h-4 bg-gray-200 rounded w-full" />
+          </div>
         </div>
       )}
 
-      {resumen && (
+      {resumen && !cargandoResumen && (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="bg-[#0d3d7a] px-5 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2 text-white">
@@ -487,6 +490,18 @@ export default function DetallePaciente() {
     { key: 'documentos', label: 'Documentos',  icon: <FileText size={15} /> },
   ]
 
+  const ultimoRegistroFecha = registros[0]?.fecha
+  const ultimaActualizacion = ultimoRegistroFecha
+    ? (() => {
+        const diff = Date.now() - new Date(ultimoRegistroFecha).getTime()
+        const h = diff / (1000 * 60 * 60)
+        if (h < 1) return 'hace menos de 1 hora'
+        if (h < 24) return `hace ${Math.floor(h)} hora${Math.floor(h) > 1 ? 's' : ''}`
+        const d = Math.floor(h / 24)
+        return `hace ${d} día${d > 1 ? 's' : ''}`
+      })()
+    : null
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-[#0d3d7a] text-white shadow-lg">
@@ -502,6 +517,11 @@ export default function DetallePaciente() {
                 {paciente.enfermedad && <><span>·</span><span>{paciente.enfermedad}</span></>}
                 <span>·</span><span>{registros.length} registros (30d)</span>
               </div>
+              {ultimaActualizacion && (
+                <p className="text-blue-300 text-xs mt-1">
+                  Último registro del paciente: {ultimaActualizacion}
+                </p>
+              )}
             </div>
           </div>
         </div>

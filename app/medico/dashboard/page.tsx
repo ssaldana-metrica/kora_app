@@ -17,6 +17,7 @@ import {
   RefreshCw,
   ChevronRight,
   Stethoscope,
+  QrCode,
 } from 'lucide-react'
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
@@ -39,31 +40,6 @@ interface MedicoProfile {
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-
-function calcularSemaforo(paciente: {
-  diasSinRegistrar: number
-  presion?: { s: number; d: number }
-  tomóMedicamentoAyer?: boolean | null
-  noMedicamento2DiasConsec?: boolean
-  presionAlta2Dias?: boolean
-}): 'verde' | 'amarillo' | 'rojo' | 'sin-datos' {
-  if (paciente.diasSinRegistrar > 30) return 'sin-datos'
-
-  if (
-    paciente.diasSinRegistrar > 3 ||
-    paciente.noMedicamento2DiasConsec ||
-    paciente.presionAlta2Dias
-  ) return 'rojo'
-
-  if (
-    paciente.diasSinRegistrar >= 2 ||
-    paciente.tomóMedicamentoAyer === false ||
-    (paciente.presion &&
-      (paciente.presion.s >= 130 || paciente.presion.d >= 85))
-  ) return 'amarillo'
-
-  return 'verde'
-}
 
 function tiempoDesde(fechaISO: string): string {
   const ahora = new Date()
@@ -240,100 +216,11 @@ export default function MedicoDashboard() {
 
       setMedico({ nombre: perfil.nombre, codigo_medico: perfil.codigo_medico })
 
-      const { data: pacientesData } = await supabase
-        .from('profiles')
-        .select('id, nombre, enfermedad, fecha_nacimiento')
-        .eq('medico_id', user.id)
-        .eq('role', 'paciente')
-
-      if (!pacientesData || pacientesData.length === 0) {
-        setPacientes([])
-        setLoading(false)
-        return
+      const res = await fetch('/api/medicos/pacientes')
+      if (res.ok) {
+        const pacientesConDatos = await res.json()
+        setPacientes(pacientesConDatos)
       }
-
-      const ahora = new Date()
-      const hace30Dias = new Date(ahora.getTime() - 30 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split('T')[0]
-
-      const pacientesConDatos: Paciente[] = await Promise.all(
-        pacientesData.map(async (p) => {
-          const { data: registros } = await supabase
-            .from('registros')
-            .select('fecha, presion_sistolica, presion_diastolica, tomo_medicamento') // ✅ CORREGIDO
-            .eq('paciente_id', p.id)
-            .gte('fecha', hace30Dias)
-            .order('fecha', { ascending: false })
-            .limit(7)
-
-          const ultimoRegistro = registros?.[0]
-          const ayer = new Date(ahora.getTime() - 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split('T')[0]
-          const anteayer = new Date(ahora.getTime() - 48 * 60 * 60 * 1000)
-            .toISOString()
-            .split('T')[0]
-
-          let diasSinRegistrar = 0
-          if (!ultimoRegistro) {
-            diasSinRegistrar = 99
-          } else {
-            const diff = ahora.getTime() - new Date(ultimoRegistro.fecha).getTime()
-            diasSinRegistrar = Math.floor(diff / (1000 * 60 * 60 * 24))
-          }
-
-          const registroAyer = registros?.find(r => r.fecha === ayer)
-          const tomóMedicamentoAyer = registroAyer
-            ? registroAyer.tomo_medicamento  // ✅ CORREGIDO
-            : null
-
-          const registroAnteayer = registros?.find(r => r.fecha === anteayer)
-          const noMedicamento2DiasConsec =
-            registroAyer?.tomo_medicamento === false &&      // ✅ CORREGIDO
-            registroAnteayer?.tomo_medicamento === false     // ✅ CORREGIDO
-
-          const presion = ultimoRegistro?.presion_sistolica
-            ? { s: ultimoRegistro.presion_sistolica, d: ultimoRegistro.presion_diastolica ?? 0 }
-            : undefined
-
-          const presionAlta2Dias =
-            (registros?.[0]?.presion_sistolica ?? 0) > 140 &&
-            (registros?.[1]?.presion_sistolica ?? 0) > 140
-
-          let edad: number | undefined
-          if (p.fecha_nacimiento) {
-            edad = Math.floor(
-              (ahora.getTime() - new Date(p.fecha_nacimiento).getTime()) /
-                (1000 * 60 * 60 * 24 * 365.25)
-            )
-          }
-
-          const semaforo = calcularSemaforo({
-            diasSinRegistrar,
-            presion,
-            tomóMedicamentoAyer,
-            noMedicamento2DiasConsec,
-            presionAlta2Dias,
-          })
-
-          return {
-            id: p.id,
-            nombre: p.nombre,
-            enfermedad: p.enfermedad,
-            edad,
-            ultimoRegistro: ultimoRegistro?.fecha,
-            presion,
-            tomóMedicamentoAyer,
-            semaforo,
-            diasSinRegistrar,
-          }
-        })
-      )
-
-      const orden = { rojo: 0, amarillo: 1, verde: 2, 'sin-datos': 3 }
-      pacientesConDatos.sort((a, b) => orden[a.semaforo] - orden[b.semaforo])
-      setPacientes(pacientesConDatos)
     } catch (err) {
       console.error('Error cargando dashboard:', err)
     } finally {
@@ -404,7 +291,15 @@ export default function MedicoDashboard() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Link
+                href="/medico/escanear"
+                className="flex items-center gap-1.5 text-sm bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition-colors"
+                title="Escanear QR del paciente"
+              >
+                <QrCode size={15} />
+                <span className="hidden sm:inline">Escanear QR</span>
+              </Link>
               <button
                 onClick={cargarDatos}
                 className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
