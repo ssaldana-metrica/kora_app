@@ -1,27 +1,20 @@
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 
 type EventoTipo =
   | 'medico_crea_cuenta'
+  | 'paciente_crea_cuenta'
   | 'paciente_vinculado'
   | 'registro_completado'
   | 'resumen_generado'
   | 'pdf_exportado'
-  | 'paciente_crea_cuenta'
   | 'receta_procesada'
 
-interface TrackOptions {
-  userId?: string
-  medicoId?: string
-  metadata?: Record<string, unknown>
-}
-
-/**
- * Registra un evento de uso en Supabase.
- * No lanza errores — falla silenciosamente para no interrumpir el flujo.
- */
-export async function trackEvent(tipo: EventoTipo, options: TrackOptions = {}) {
+export async function trackEventServer(
+  tipo: EventoTipo,
+  options: { userId?: string; medicoId?: string; metadata?: Record<string, unknown> } = {}
+): Promise<void> {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     await supabase.from('eventos_tracking').insert({
       tipo,
       user_id: options.userId ?? null,

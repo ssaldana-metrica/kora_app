@@ -6,6 +6,9 @@ const anthropic = new Anthropic({
 })
 
 export async function POST(req: NextRequest) {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return NextResponse.json({ error: 'ANTHROPIC_API_KEY no configurada en el servidor' }, { status: 503 })
+  }
   try {
     const { pacienteNombre, registros, documentos } = await req.json()
 

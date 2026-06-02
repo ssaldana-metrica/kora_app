@@ -16,6 +16,7 @@ import {
   Moon,
   Sunset,
   Plus,
+  Camera,
 } from 'lucide-react'
 
 interface Profile {
@@ -151,6 +152,10 @@ export default function PacienteDashboard() {
           <CardMedicamentos medicamentos={medicamentos} registroHoy={registroHoy} />
         )}
 
+        {medicamentos.length === 0 && (
+          <CTAReceta />
+        )}
+
         {medicamentos.length === 0 && registroHoy && (
           <div className="bg-[#e8f0fc] rounded-2xl p-5 text-center">
             <p className="text-2xl mb-1">🌟</p>
@@ -184,6 +189,28 @@ function CardRegistrar() {
         className="block w-full bg-[#22c55e] hover:bg-[#16a34a] active:scale-95 transition-all text-white text-xl font-bold py-4 rounded-2xl text-center shadow-md"
       >
         Registrar ahora
+      </Link>
+    </div>
+  )
+}
+
+function CTAReceta() {
+  return (
+    <div className="bg-gradient-to-br from-[#1a56a4] to-[#0d3d7a] rounded-3xl p-6 text-white shadow-md">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="bg-white/20 rounded-xl p-2">
+          <Camera size={26} />
+        </div>
+        <p className="text-lg font-bold">¿Tienes una receta médica?</p>
+      </div>
+      <p className="text-white/80 text-sm mb-5 leading-relaxed">
+        Fotografía tu receta y KORA creará automáticamente tu plan de medicación. Solo toma 1 minuto.
+      </p>
+      <Link
+        href="/paciente/receta"
+        className="block w-full bg-white text-[#1a56a4] text-lg font-bold py-4 rounded-2xl text-center active:scale-95 transition-transform shadow-md"
+      >
+        📷 Tomar foto de receta
       </Link>
     </div>
   )

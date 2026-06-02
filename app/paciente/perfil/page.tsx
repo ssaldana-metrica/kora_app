@@ -1,20 +1,22 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { QRCodeSVG } from 'qrcode.react'
 import {
   Home,
   ClipboardList,
   FileText,
   User,
   LogOut,
-  Link2,
+  Search,
   CheckCircle2,
+  MapPin,
+  Stethoscope,
+  QrCode,
 } from 'lucide-react'
-
-// ─── Nav ──────────────────────────────────────────────────────────────────────
 
 const NAV = [
   { href: '/paciente/dashboard', label: 'Inicio', Icon: Home },
@@ -24,7 +26,12 @@ const NAV = [
   { href: '/paciente/perfil', label: 'Perfil', Icon: User },
 ]
 
-// ─── Componente principal ─────────────────────────────────────────────────────
+interface MedicoResult {
+  id: string
+  nombre: string
+  especialidad: string | null
+  ubicacion: string | null
+}
 
 export default function Perfil() {
   const supabase = createClient()
@@ -32,18 +39,20 @@ export default function Perfil() {
 
   const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
-  const [codigoMedico, setCodigoMedico] = useState('')
-  const [inputCodigo, setInputCodigo] = useState('')
+  const [userId2, setUserId2] = useState<string | null>(null)
+  const [medicoVinculado, setMedicoVinculado] = useState<{ nombre: string } | null>(null)
   const [loading, setLoading] = useState(true)
-  const [vinculando, setVinculando] = useState(false)
-  const [mensajeVinculo, setMensajeVinculo] = useState('')
-  const [userId, setUserId] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
+  const [resultados, setResultados] = useState<MedicoResult[]>([])
+  const [buscando, setBuscando] = useState(false)
+  const [vinculando, setVinculando] = useState<string | null>(null)
+  const [mensaje, setMensaje] = useState('')
 
   useEffect(() => {
     async function cargar() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      setUserId(user.id)
+      setUserId2(user.id)
 
       const { data: perfil } = await supabase
         .from('profiles')
@@ -58,10 +67,10 @@ export default function Perfil() {
         if (perfil.medico_id) {
           const { data: medico } = await supabase
             .from('profiles')
-            .select('nombre, codigo_medico')
+            .select('nombre')
             .eq('id', perfil.medico_id)
             .single()
-          if (medico) setCodigoMedico(medico.codigo_medico ?? medico.nombre ?? '')
+          if (medico) setMedicoVinculado({ nombre: medico.nombre })
         }
       }
 
@@ -70,33 +79,40 @@ export default function Perfil() {
     cargar()
   }, [])
 
-  async function vincularMedico() {
-    if (!inputCodigo.trim() || !userId) return
-    setVinculando(true)
-    setMensajeVinculo('')
-
-    const { data: medico } = await supabase
-      .from('profiles')
-      .select('id, nombre, codigo_medico')
-      .eq('codigo_medico', inputCodigo.trim())
-      .eq('role', 'medico')
-      .single()
-
-    if (!medico) {
-      setMensajeVinculo('❌ No encontramos un médico con ese código. Verifica e intenta de nuevo.')
-      setVinculando(false)
-      return
+  const buscarMedicos = useCallback(async (q: string) => {
+    if (q.length < 2) { setResultados([]); return }
+    setBuscando(true)
+    try {
+      const res = await fetch(`/api/pacientes/buscar-medicos?q=${encodeURIComponent(q)}`)
+      if (res.ok) setResultados(await res.json())
+    } finally {
+      setBuscando(false)
     }
+  }, [])
 
-    await supabase
-      .from('profiles')
-      .update({ medico_id: medico.id })
-      .eq('id', userId)
+  useEffect(() => {
+    const t = setTimeout(() => buscarMedicos(query), 350)
+    return () => clearTimeout(t)
+  }, [query, buscarMedicos])
 
-    setCodigoMedico(medico.codigo_medico ?? medico.nombre)
-    setInputCodigo('')
-    setMensajeVinculo(`✅ ¡Vinculado con éxito con el Dr./Dra. ${medico.nombre}!`)
-    setVinculando(false)
+  async function vincular(medico: MedicoResult) {
+    setVinculando(medico.id)
+    setMensaje('')
+    try {
+      const res = await fetch('/api/pacientes/vincular-medico', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ medicoId: medico.id }),
+      })
+      if (res.ok) {
+        setMedicoVinculado({ nombre: medico.nombre })
+        setQuery('')
+        setResultados([])
+        setMensaje(`✅ ¡Vinculado con éxito con ${medico.nombre}!`)
+      }
+    } finally {
+      setVinculando(null)
+    }
   }
 
   async function cerrarSesion() {
@@ -133,13 +149,12 @@ export default function Perfil() {
             </div>
           </div>
 
-          {/* Médico vinculado */}
-          {codigoMedico ? (
+          {medicoVinculado ? (
             <div className="flex items-center gap-3 bg-green-50 rounded-2xl px-4 py-3">
               <CheckCircle2 className="text-green-500 shrink-0" size={22} />
               <div>
                 <p className="text-sm font-semibold text-green-700">Médico vinculado</p>
-                <p className="text-base text-green-600">{codigoMedico}</p>
+                <p className="text-base text-green-600">{medicoVinculado.nombre}</p>
               </div>
             </div>
           ) : (
@@ -149,35 +164,94 @@ export default function Perfil() {
           )}
         </div>
 
-        {/* Vincular médico */}
+        {/* Buscador de médicos */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-2 mb-4">
-            <Link2 className="text-[#1a56a4]" size={22} />
+          <div className="flex items-center gap-2 mb-2">
+            <Stethoscope className="text-[#1a56a4]" size={22} />
             <h2 className="text-xl font-bold text-gray-800">
-              {codigoMedico ? 'Cambiar médico' : '¿Tienes el código de tu médico?'}
+              {medicoVinculado ? 'Cambiar médico' : 'Busca a tu médico'}
             </h2>
           </div>
-          <p className="text-base text-gray-400 mb-4">
-            Tu médico te dará un código único para vincularse contigo.
+          <p className="text-sm text-gray-400 mb-4">
+            Escribe el nombre o especialidad de tu médico para vincularte.
           </p>
-          <input
-            type="text"
-            value={inputCodigo}
-            onChange={e => setInputCodigo(e.target.value.toUpperCase())}
-            placeholder="Ej: MED-12345"
-            className="w-full text-xl border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:border-[#1a56a4] mb-3 tracking-widest font-mono"
-          />
-          <button
-            onClick={vincularMedico}
-            disabled={vinculando || !inputCodigo.trim()}
-            className="w-full bg-[#1a56a4] text-white text-xl font-bold py-4 rounded-2xl active:scale-95 transition-transform disabled:opacity-50"
-          >
-            {vinculando ? 'Buscando...' : 'Vincular médico'}
-          </button>
-          {mensajeVinculo && (
-            <p className="text-base mt-3 text-center font-medium text-gray-600">{mensajeVinculo}</p>
+
+          <div className="relative mb-3">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Ej: García, cardiólogo..."
+              className="w-full border border-gray-200 rounded-2xl pl-10 pr-4 py-3 text-base focus:outline-none focus:border-[#1a56a4]"
+            />
+          </div>
+
+          {buscando && (
+            <p className="text-sm text-gray-400 text-center py-2">Buscando...</p>
+          )}
+
+          {resultados.length > 0 && (
+            <ul className="flex flex-col gap-2 mt-1">
+              {resultados.map(medico => (
+                <li key={medico.id} className="bg-[#f8faff] rounded-2xl p-4 border border-gray-100">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-800 truncate">{medico.nombre}</p>
+                      <div className="flex flex-wrap gap-x-3 mt-0.5">
+                        {medico.especialidad && (
+                          <span className="text-sm text-[#1a56a4]">{medico.especialidad}</span>
+                        )}
+                        {medico.ubicacion && (
+                          <span className="text-sm text-gray-400 flex items-center gap-1">
+                            <MapPin size={12} /> {medico.ubicacion}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => vincular(medico)}
+                      disabled={vinculando === medico.id}
+                      className="bg-[#1a56a4] text-white text-sm font-bold px-4 py-2 rounded-xl active:scale-95 transition-transform disabled:opacity-50 shrink-0"
+                    >
+                      {vinculando === medico.id ? '...' : 'Vincular'}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {query.length >= 2 && !buscando && resultados.length === 0 && (
+            <p className="text-sm text-gray-400 text-center py-3">
+              No encontramos médicos con ese nombre. Verifica que estén registrados en KORA.
+            </p>
+          )}
+
+          {mensaje && (
+            <p className="text-base mt-3 text-center font-medium text-gray-600">{mensaje}</p>
           )}
         </div>
+
+        {/* Mi QR de KORA */}
+        {userId2 && (
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2 mb-4">
+              <QrCode className="text-[#1a56a4]" size={22} />
+              <h2 className="text-xl font-bold text-gray-800">Mi QR de KORA</h2>
+            </div>
+            <p className="text-sm text-gray-400 mb-5">
+              Muéstraselo a tu médico en la consulta para vincularse contigo al instante.
+            </p>
+            <div className="flex justify-center bg-white p-4 rounded-2xl border border-gray-100">
+              <QRCodeSVG
+                value={`https://koraappverce.vercel.app/medico/vincular?paciente_id=${userId2}`}
+                size={180}
+                level="M"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Cerrar sesión */}
         <button

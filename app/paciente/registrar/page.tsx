@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react'
+import { trackEvent } from '@/lib/tracking'
 
 interface FormData {
   bienestar_general: number | null
@@ -69,6 +70,7 @@ export default function Registrar() {
       return
     }
 
+    await trackEvent('registro_completado', { userId: user.id })
     setGuardando(false)
     setListo(true)
   }
