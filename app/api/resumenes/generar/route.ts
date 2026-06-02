@@ -4,6 +4,9 @@ import { generarResumen } from '@/lib/services/resumen.service'
 import { trackEventServer } from '@/lib/services/tracking.service'
 
 export async function POST(req: NextRequest) {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return NextResponse.json({ error: 'ANTHROPIC_API_KEY no configurada en el servidor' }, { status: 503 })
+  }
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
