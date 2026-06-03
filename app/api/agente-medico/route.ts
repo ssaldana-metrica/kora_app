@@ -49,7 +49,7 @@ ${resumenRegistros || 'Sin registros'}
     }))
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 300,
       system: `Eres KORA, el asistente clínico de seguimiento entre consultas.
 Tienes acceso al historial completo de ${pacienteNombre} de los últimos 30 días:
