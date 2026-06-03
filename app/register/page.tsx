@@ -23,7 +23,14 @@ export default function RegisterPage() {
     setLoading(true)
     setError('')
 
-    const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
+    // Pasamos los datos en options.data para que el trigger los use al crear el perfil
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { nombre, role, especialidad: especialidad || null, ubicacion: ubicacion || null },
+      },
+    })
 
     if (signUpError || !data.user) {
       setError(signUpError?.message ?? 'Error al registrarse')
@@ -31,31 +38,27 @@ export default function RegisterPage() {
       return
     }
 
-    const profileData: Record<string, string> = {
-      id: data.user.id,
-      nombre,
-      email,
-      role,
-    }
-
-    if (role === 'medico') {
-      if (especialidad) profileData.especialidad = especialidad
-      if (ubicacion) profileData.ubicacion = ubicacion
-    }
-
-    const { error: profileError } = await supabase.from('profiles').insert(profileData)
-
-    if (profileError) {
-      setError('Error al guardar el perfil: ' + profileError.message)
-      setLoading(false)
-      return
+    // Si hay sesión activa (email confirm desactivado), actualizamos el perfil con todos los datos
+    if (data.session) {
+      const updateData: Record<string, string | null> = { nombre, role }
+      if (role === 'medico') {
+        updateData.especialidad = especialidad || null
+        updateData.ubicacion = ubicacion || null
+      }
+      await supabase.from('profiles').update(updateData).eq('id', data.user.id)
     }
 
     await trackEvent(role === 'medico' ? 'medico_crea_cuenta' : 'paciente_crea_cuenta', {
       userId: data.user.id,
     })
 
-    router.push(role === 'medico' ? '/medico/dashboard' : '/paciente/dashboard')
+    if (data.session) {
+      router.push(role === 'medico' ? '/medico/dashboard' : '/paciente/dashboard')
+    } else {
+      // Email confirmation required — el trigger ya creó el perfil
+      setError('')
+      router.push(`/login?mensaje=Revisa tu email para confirmar tu cuenta`)
+    }
   }
 
   return (
