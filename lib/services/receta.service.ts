@@ -2,7 +2,9 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import type { Medicamento } from '@/lib/types'
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+function getAnthropicClient() {
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+}
 
 export interface RecetaExtraida {
   medicamentos: Array<{
@@ -30,8 +32,9 @@ export async function procesarRecetaConIA(imageUrl: string): Promise<RecetaExtra
     | 'image/gif'
     | 'image/webp'
 
+  const anthropic = getAnthropicClient()
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 1200,
     messages: [
       {

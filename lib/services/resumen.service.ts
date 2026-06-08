@@ -2,7 +2,9 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import type { Registro, Documento } from '@/lib/types'
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+function getAnthropicClient() {
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+}
 
 const CACHE_HORAS = 4
 
@@ -83,8 +85,9 @@ BIENESTAR: ${bienestarProm.toFixed(1)}/5 (promedio)
 DOCUMENTOS: ${documentos.length}
 NOTAS: ${notas || 'Sin notas'}`
 
+  const anthropic = getAnthropicClient()
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 800,
     system: `Eres KORA, asistente clínico de seguimiento entre consultas.
 Generas resúmenes pre-consulta concisos para médicos.
