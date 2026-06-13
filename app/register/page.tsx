@@ -60,7 +60,7 @@ export default function RegisterPage() {
     })
 
     if (data.session) {
-      router.push(role === 'medico' ? '/medico/dashboard' : '/paciente/dashboard')
+      router.push(role === 'medico' ? '/medico/dashboard' : '/paciente/onboarding')
     } else {
       // Email confirmation required — el trigger ya creó el perfil
       setError('')

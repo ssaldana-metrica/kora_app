@@ -17,7 +17,10 @@ import {
   Sunset,
   Plus,
   Camera,
+  Flame,
+  TrendingUp,
 } from 'lucide-react'
+import { calcularRacha } from '@/lib/progreso'
 
 interface Profile {
   nombre: string
@@ -68,6 +71,7 @@ export default function PacienteDashboard() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [registroHoy, setRegistroHoy] = useState<Registro | null>(null)
   const [medicamentos, setMedicamentos] = useState<Medicamento[]>([])
+  const [racha, setRacha] = useState(0)
   const [loading, setLoading] = useState(true)
 
   const { texto: saludo, Icono: IconoSaludo } = getSaludo()
@@ -106,6 +110,17 @@ export default function PacienteDashboard() {
         .eq('activo', true)
 
       setMedicamentos(meds ?? [])
+
+      // Racha de días consecutivos (últimos 30 días)
+      const hace30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const { data: ultimos } = await supabase
+        .from('registros')
+        .select('fecha')
+        .eq('paciente_id', user.id)
+        .gte('fecha', hace30)
+        .order('fecha', { ascending: false })
+      setRacha(calcularRacha(ultimos ?? []))
+
       setLoading(false)
     }
 
@@ -142,6 +157,8 @@ export default function PacienteDashboard() {
       </header>
 
       <main className="px-4 pt-5 flex flex-col gap-5 max-w-lg mx-auto">
+        {racha > 0 && <CardRacha racha={racha} />}
+
         {registroHoy ? (
           <RegistroExistente registro={registroHoy} />
         ) : (
@@ -174,6 +191,26 @@ export default function PacienteDashboard() {
 
       <BottomNav active="/paciente/dashboard" />
     </div>
+  )
+}
+
+function CardRacha({ racha }: { racha: number }) {
+  return (
+    <Link
+      href="/paciente/progreso"
+      className="flex items-center justify-between gap-3 bg-gradient-to-r from-[#ff8a3d] to-[#ff5e3a] rounded-3xl p-5 text-white shadow-md active:scale-[0.99] transition-transform"
+    >
+      <div className="flex items-center gap-3">
+        <Flame size={36} className="shrink-0" />
+        <div>
+          <p className="text-2xl font-extrabold leading-none">{racha} {racha === 1 ? 'día' : 'días'}</p>
+          <p className="text-base font-medium text-white/90">seguidos cuidándote</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-1 text-white/90 text-sm font-semibold">
+        <TrendingUp size={18} /> Ver progreso
+      </div>
+    </Link>
   )
 }
 
