@@ -8,6 +8,8 @@ type EventoTipo =
   | 'pdf_exportado'
   | 'paciente_crea_cuenta'
   | 'receta_procesada'
+  | 'recordatorio_enviado'
+  | 'recordatorio_respondido'
 
 interface TrackOptions {
   userId?: string

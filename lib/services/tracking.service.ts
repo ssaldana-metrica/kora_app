@@ -8,6 +8,8 @@ type EventoTipo =
   | 'resumen_generado'
   | 'pdf_exportado'
   | 'receta_procesada'
+  | 'recordatorio_enviado'
+  | 'recordatorio_respondido'
 
 export async function trackEventServer(
   tipo: EventoTipo,
