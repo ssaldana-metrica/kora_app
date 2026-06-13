@@ -56,7 +56,7 @@ export async function getPacientesDelMedico(medicoId: string): Promise<PacienteC
         .eq('paciente_id', p.id)
         .gte('fecha', hace30Dias)
         .order('fecha', { ascending: false })
-        .limit(7)
+        .limit(30)
 
       const ultimoRegistro = registros?.[0]
       const ayer = new Date(ahora.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -85,13 +85,33 @@ export async function getPacientesDelMedico(medicoId: string): Promise<PacienteC
         (registros?.[0]?.presion_sistolica ?? 0) > 140 &&
         (registros?.[1]?.presion_sistolica ?? 0) > 140
 
+      // Adherencia sobre la ventana de 30 días
+      const totalReg = registros?.length ?? 0
+      const tomados = registros?.filter(r => r.tomo_medicamento).length ?? 0
+      const adherencia = totalReg ? Math.round((tomados / totalReg) * 100) : 0
+
+      // Presión >140/90 tres días consecutivos
+      const presionAlta3Dias = (registros ?? []).slice(0, 3).length === 3 &&
+        (registros ?? []).slice(0, 3).every(
+          r => (r.presion_sistolica ?? 0) > 140 || (r.presion_diastolica ?? 0) > 90
+        )
+
       const semaforo = calcularSemaforo({
         diasSinRegistrar,
         presion,
         tomóMedicamentoAyer,
         noMedicamento2DiasConsec,
-        presionAlta2Dias,
+        presionAlta2Dias: presionAlta2Dias || presionAlta3Dias,
       })
+
+      // Motivos clínicos concretos para el panel de alertas
+      const motivosAlerta: string[] = []
+      if (diasSinRegistrar >= 5 && diasSinRegistrar < 99)
+        motivosAlerta.push(`Sin registrar hace ${diasSinRegistrar} días`)
+      if (diasSinRegistrar === 99) motivosAlerta.push('Nunca ha registrado')
+      if (presionAlta3Dias) motivosAlerta.push('Presión alta 3 días seguidos')
+      if (totalReg >= 3 && adherencia < 50)
+        motivosAlerta.push(`Adherencia baja (${adherencia}%)`)
 
       return {
         id: p.id,
@@ -101,8 +121,10 @@ export async function getPacientesDelMedico(medicoId: string): Promise<PacienteC
         ultimoRegistro: ultimoRegistro?.fecha,
         presion,
         tomóMedicamentoAyer,
+        adherencia,
         semaforo,
         diasSinRegistrar,
+        motivosAlerta,
       }
     })
   )

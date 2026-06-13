@@ -73,4 +73,6 @@ export interface PacienteConSemaforo extends Paciente {
   ultimoRegistro?: string
   presion?: { s: number; d: number }
   tomóMedicamentoAyer?: boolean | null
+  adherencia?: number
+  motivosAlerta?: string[]
 }

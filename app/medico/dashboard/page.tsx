@@ -32,6 +32,8 @@ interface Paciente {
   tomóMedicamentoAyer?: boolean | null
   semaforo: 'verde' | 'amarillo' | 'rojo' | 'sin-datos'
   diasSinRegistrar: number
+  adherencia?: number
+  motivosAlerta?: string[]
 }
 
 interface MedicoProfile {
@@ -53,6 +55,46 @@ function tiempoDesde(fechaISO: string): string {
   if (diffDias < 2) return 'Ayer'
   if (diffDias < 7) return `Hace ${Math.floor(diffDias)} días`
   return `Hace ${Math.floor(diffDias / 7)} semanas`
+}
+
+// ── Panel de alertas ─────────────────────────────────────────────────────
+
+function PanelAlertas({ pacientes }: { pacientes: Paciente[] }) {
+  const enRiesgo = pacientes
+    .filter(p => (p.motivosAlerta?.length ?? 0) > 0)
+    .sort((a, b) => (b.motivosAlerta?.length ?? 0) - (a.motivosAlerta?.length ?? 0))
+
+  if (enRiesgo.length === 0) return null
+
+  return (
+    <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 shadow-sm">
+      <div className="flex items-center gap-2 mb-3">
+        <AlertCircle size={18} className="text-red-600" />
+        <h2 className="font-bold text-red-800">
+          {enRiesgo.length === 1
+            ? '1 paciente necesita tu atención'
+            : `${enRiesgo.length} pacientes necesitan tu atención`}
+        </h2>
+      </div>
+      <div className="space-y-2">
+        {enRiesgo.map(p => (
+          <Link
+            key={p.id}
+            href={`/medico/paciente/${p.id}`}
+            className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-red-100 hover:border-red-300 transition-colors"
+          >
+            <div className="min-w-0">
+              <p className="font-semibold text-gray-900 text-sm truncate">{p.nombre}</p>
+              <p className="text-xs text-red-600 truncate">
+                {p.motivosAlerta?.join(' · ')}
+              </p>
+            </div>
+            <ChevronRight size={16} className="text-red-400 flex-shrink-0" />
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 // ── Tarjeta paciente ───────────────────────────────────────────────────────
@@ -350,6 +392,9 @@ export default function MedicoDashboard() {
             </p>
           </div>
         </div>
+
+        {/* Panel de alertas automáticas */}
+        <PanelAlertas pacientes={pacientes} />
 
         {/* Resumen numérico */}
         {pacientes.length > 0 && (
