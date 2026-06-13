@@ -253,6 +253,16 @@ export default function Perfil() {
           </div>
         )}
 
+        {/* Privacidad */}
+        <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+          <h2 className="text-base font-bold text-gray-700 mb-1">Tu información es tuya</h2>
+          <p className="text-sm text-gray-500 leading-relaxed">
+            Tú eres el dueño de tus datos de salud. Solo el médico que tú elijas vincular
+            puede verlos, y puedes desvincularte cuando quieras. KORA no comparte tu
+            información con nadie más.
+          </p>
+        </div>
+
         {/* Cerrar sesión */}
         <button
           onClick={cerrarSesion}

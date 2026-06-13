@@ -200,9 +200,14 @@ export default function RecetaPage() {
           <>
             <div className="bg-[#e8f0fc] rounded-2xl p-4 flex items-center gap-3 border border-[#1a56a4]/20">
               <CheckCircle2 className="text-[#1a56a4] shrink-0" size={22} />
-              <p className="text-[#1a56a4] font-semibold">
-                KORA encontró {medicamentos.length} medicamento{medicamentos.length > 1 ? 's' : ''}. Revisa y corrige si hace falta.
-              </p>
+              <div>
+                <p className="text-[#1a56a4] font-semibold">
+                  KORA encontró {medicamentos.length} medicamento{medicamentos.length > 1 ? 's' : ''}. Revisa y corrige si hace falta.
+                </p>
+                <p className="text-[#1a56a4]/70 text-sm mt-1">
+                  La lectura es automática (IA): revisa que todo esté correcto antes de confirmar.
+                </p>
+              </div>
             </div>
 
             <div className="flex flex-col gap-3">

@@ -189,6 +189,12 @@ function TabResumen({
           <div className="p-5 prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap leading-relaxed">
             {resumen}
           </div>
+          <div className="px-5 pb-4 -mt-1">
+            <p className="text-xs text-gray-400 italic">
+              Resumen generado por IA como apoyo clínico a partir de los registros del paciente.
+              El criterio médico es del profesional; usted valida la información.
+            </p>
+          </div>
         </div>
       )}
 
