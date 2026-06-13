@@ -8,6 +8,7 @@ export interface Paciente {
   enfermedad?: string
   fecha_nacimiento?: string
   medico_id?: string | null
+  es_demo?: boolean
 }
 
 export interface Medico {

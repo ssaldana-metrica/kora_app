@@ -13,6 +13,7 @@ import {
   ResponsiveContainer, ReferenceLine, BarChart, Bar, Legend,
 } from 'recharts'
 import ExportarPDF from '@/components/medico/ExportarPDF'
+import DemoBadge from '@/components/DemoBadge'
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
 
@@ -47,6 +48,7 @@ interface PacienteInfo {
   enfermedad?: string
   fecha_nacimiento?: string
   email?: string
+  es_demo?: boolean
 }
 
 type Tab = 'resumen' | 'graficos' | 'registros' | 'documentos'
@@ -458,7 +460,7 @@ export default function DetallePaciente() {
       const { data: medico } = await supabase.from('profiles').select('nombre, codigo_medico').eq('id', user.id).single()
       if (medico) { setMedicoNombre(medico.nombre); setCodigoMedico(medico.codigo_medico ?? '') }
 
-      const { data: perfil } = await supabase.from('profiles').select('id, nombre, enfermedad, fecha_nacimiento, email').eq('id', pacienteId).single()
+      const { data: perfil } = await supabase.from('profiles').select('id, nombre, enfermedad, fecha_nacimiento, email, es_demo').eq('id', pacienteId).single()
       if (!perfil) { router.push('/medico/dashboard'); return }
       setPaciente(perfil)
 
@@ -516,7 +518,10 @@ export default function DetallePaciente() {
               <ArrowLeft size={18} />
             </Link>
             <div>
-              <h1 className="font-bold text-xl leading-tight">{paciente.nombre}</h1>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="font-bold text-xl leading-tight">{paciente.nombre}</h1>
+                {paciente.es_demo && <DemoBadge />}
+              </div>
               <div className="flex items-center gap-3 text-blue-200 text-sm mt-0.5">
                 {edadPaciente && <span>{edadPaciente} años</span>}
                 {paciente.enfermedad && <><span>·</span><span>{paciente.enfermedad}</span></>}

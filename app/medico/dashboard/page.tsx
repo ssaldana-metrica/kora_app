@@ -19,6 +19,7 @@ import {
   Stethoscope,
   QrCode,
 } from 'lucide-react'
+import DemoBadge from '@/components/DemoBadge'
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
 
@@ -34,6 +35,7 @@ interface Paciente {
   diasSinRegistrar: number
   adherencia?: number
   motivosAlerta?: string[]
+  es_demo?: boolean
 }
 
 interface MedicoProfile {
@@ -155,6 +157,7 @@ function TarjetaPaciente({ paciente }: { paciente: Paciente }) {
             {paciente.enfermedad && (
               <p className="text-xs text-gray-500 mt-0.5">{paciente.enfermedad}</p>
             )}
+            {paciente.es_demo && <DemoBadge className="mt-1.5" />}
           </div>
           <span className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${cfg.badge}`}>
             <span className={`w-2 h-2 rounded-full ${cfg.dot} inline-block`} />

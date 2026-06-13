@@ -26,7 +26,7 @@ export async function getPaciente(pacienteId: string): Promise<Paciente | null> 
   const supabase = await createClient()
   const { data } = await supabase
     .from('profiles')
-    .select('id, nombre, email, enfermedad, fecha_nacimiento, medico_id')
+    .select('id, nombre, email, enfermedad, fecha_nacimiento, medico_id, es_demo')
     .eq('id', pacienteId)
     .single()
   return data ?? null
@@ -37,7 +37,7 @@ export async function getPacientesDelMedico(medicoId: string): Promise<PacienteC
 
   const { data: pacientesData } = await supabase
     .from('profiles')
-    .select('id, nombre, enfermedad, fecha_nacimiento')
+    .select('id, nombre, enfermedad, fecha_nacimiento, es_demo')
     .eq('medico_id', medicoId)
     .eq('role', 'paciente')
 
@@ -118,6 +118,7 @@ export async function getPacientesDelMedico(medicoId: string): Promise<PacienteC
         nombre: p.nombre,
         enfermedad: p.enfermedad,
         fecha_nacimiento: p.fecha_nacimiento,
+        es_demo: p.es_demo,
         ultimoRegistro: ultimoRegistro?.fecha,
         presion,
         tomóMedicamentoAyer,
