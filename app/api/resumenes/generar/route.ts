@@ -12,21 +12,26 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
 
-    const { pacienteNombre, registros, documentos, pacienteId } = await req.json()
+    const { pacienteNombre, registros, documentos, pacienteId, forzar } = await req.json()
 
     const resumen = await generarResumen(
       pacienteNombre,
       registros,
       documentos,
       pacienteId,
-      user.id
+      user.id,
+      forzar === true
     )
 
     await trackEventServer('resumen_generado', { userId: user.id, medicoId: user.id })
 
     return NextResponse.json({ resumen })
   } catch (error) {
-    console.error('Error generando resumen:', error)
-    return NextResponse.json({ error: 'Error al generar el resumen' }, { status: 500 })
+    const detalle = error instanceof Error ? error.message : 'Error desconocido'
+    console.error('Error generando resumen:', detalle, error)
+    return NextResponse.json(
+      { error: `No se pudo generar el resumen: ${detalle}` },
+      { status: 500 }
+    )
   }
 }

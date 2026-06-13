@@ -60,13 +60,14 @@ export default function Documentos() {
 
     setSubiendo(true)
 
-    const ext = file.name.split('.').pop() ?? 'bin'
-    const path = `${userId}/${Date.now()}.${ext}`
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+    const path = `${userId}/${Date.now()}_${safeName}`
 
     const { error: uploadError } = await supabase.storage.from('documentos').upload(path, file)
 
     if (uploadError) {
-      alert('Error al subir el archivo. Verifica que el tamaño no sea mayor a 50MB.')
+      console.error('Error subiendo documento:', uploadError)
+      alert(`No se pudo subir el archivo: ${uploadError.message}`)
       setSubiendo(false)
       return
     }

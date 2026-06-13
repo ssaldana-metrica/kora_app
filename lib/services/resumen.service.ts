@@ -28,13 +28,16 @@ export async function generarResumen(
   registros: Registro[],
   documentos: Documento[],
   pacienteId: string,
-  medicoId: string
+  medicoId: string,
+  forzar = false
 ): Promise<string> {
-  const resumenCacheado = await getResumenCacheado(pacienteId, medicoId)
-  if (resumenCacheado) return resumenCacheado
+  if (!forzar) {
+    const resumenCacheado = await getResumenCacheado(pacienteId, medicoId)
+    if (resumenCacheado) return resumenCacheado
+  }
 
   if (!registros.length) {
-    return 'Este paciente aún no tiene registros en los últimos 30 días.'
+    return 'Este paciente aún no tiene registros suficientes en los últimos 30 días. Pídele que registre sus signos diarios para generar un resumen pre-consulta útil.'
   }
 
   const total = registros.length

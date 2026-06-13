@@ -97,7 +97,7 @@ function TabResumen({
     generarResumen()
   }, [])
 
-  async function generarResumen() {
+  async function generarResumen(forzar = false) {
     setCargandoResumen(true)
     setResumen('')
     try {
@@ -109,12 +109,17 @@ function TabResumen({
           registros,
           documentos,
           pacienteId: paciente.id,
+          forzar,
         }),
       })
       const data = await res.json()
+      if (!res.ok) {
+        setResumen(data.error || 'No se pudo generar el resumen. Intenta nuevamente.')
+        return
+      }
       setResumen(data.resumen || 'No se pudo generar el resumen.')
     } catch {
-      setResumen('Error al generar el resumen. Intenta nuevamente.')
+      setResumen('Error de conexión al generar el resumen. Intenta nuevamente.')
     } finally {
       setCargandoResumen(false)
     }
@@ -168,7 +173,7 @@ function TabResumen({
               <span className="font-semibold text-sm">Resumen KORA · {new Date().toLocaleDateString('es-PE')}</span>
             </div>
             <div className="flex items-center gap-3">
-              <button onClick={generarResumen} className="text-blue-200 hover:text-white text-xs underline">Regenerar</button>
+              <button onClick={() => generarResumen(true)} className="text-blue-200 hover:text-white text-xs underline">Regenerar</button>
               <ExportarPDF
                 pacienteNombre={paciente.nombre}
                 pacienteEnfermedad={paciente.enfermedad}
