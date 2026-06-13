@@ -38,6 +38,13 @@ export default function RegisterPage() {
       return
     }
 
+    // Supabase devuelve un user con identities vacío cuando el correo ya está registrado
+    if (data.user.identities && data.user.identities.length === 0) {
+      setError('Ya existe una cuenta con este correo. Inicia sesión.')
+      setLoading(false)
+      return
+    }
+
     // Si hay sesión activa (email confirm desactivado), actualizamos el perfil con todos los datos
     if (data.session) {
       const updateData: Record<string, string | null> = { nombre, role }
