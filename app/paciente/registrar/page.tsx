@@ -89,18 +89,18 @@ export default function Registrar() {
 
   if (listo) {
     return (
-      <div className="min-h-screen bg-[#f8faff] flex flex-col items-center justify-center px-6 text-center">
-        <div className="bg-white rounded-3xl p-10 shadow-sm border border-gray-100 max-w-sm w-full">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
-            <Check className="text-green-500" size={40} />
+      <div className="min-h-screen bg-[#F4F7FB] flex flex-col items-center justify-center px-6 text-center">
+        <div className="bg-white rounded-3xl p-10 shadow-sm border border-[#E5EAF0] max-w-sm w-full">
+          <div className="w-20 h-20 bg-[#E6F4F4] rounded-full flex items-center justify-center mx-auto mb-5">
+            <Check className="text-[#0E9594]" size={40} strokeWidth={3} />
           </div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">¡Listo! 🎉</h1>
-          <p className="text-lg text-gray-500 mb-8">
+          <h1 className="text-2xl font-bold text-[#0E1B2A] mb-2">¡Listo!</h1>
+          <p className="text-base text-[#5B6B7C] mb-8">
             Tu médico podrá ver cómo estuviste hoy.
           </p>
           <button
             onClick={() => router.push('/paciente/dashboard')}
-            className="w-full bg-[#1a56a4] text-white text-xl font-bold py-4 rounded-2xl active:scale-95 transition-transform"
+            className="w-full bg-[#0B2A4A] text-white text-xl font-bold py-4 rounded-[20px] active:scale-95 transition-transform"
           >
             Volver al inicio
           </button>
@@ -110,25 +110,36 @@ export default function Registrar() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8faff] flex flex-col">
+    <div className="min-h-screen bg-[#F4F7FB] flex flex-col">
       <header className="bg-white px-5 pt-12 pb-5 shadow-sm">
-        <div className="flex items-center gap-4 mb-4">
-          <button onClick={atras} className="text-gray-400 active:scale-90 transition-transform">
+        <div className="flex items-center gap-4 mb-5">
+          <button
+            onClick={atras}
+            className="text-[#0B2A4A] active:scale-90 transition-transform"
+          >
             <ChevronLeft size={28} />
           </button>
-          <h1 className="text-xl font-bold text-gray-700">¿Cómo estás hoy?</h1>
+          <h1 className="text-xl font-bold text-[#0E1B2A]">¿Cómo estás hoy?</h1>
         </div>
-        <div className="flex gap-1.5">
-          {Array.from({ length: TOTAL_PASOS }).map((_, i) => (
-            <div
-              key={i}
-              className={`h-2 flex-1 rounded-full transition-all duration-300 ${
-                i + 1 <= paso ? 'bg-[#1a56a4]' : 'bg-gray-200'
-              }`}
-            />
-          ))}
+        <div className="flex gap-2 items-center mb-2">
+          {Array.from({ length: TOTAL_PASOS }).map((_, i) => {
+            const isCompleted = i + 1 < paso
+            const isCurrent = i + 1 === paso
+            return (
+              <div
+                key={i}
+                className={`transition-all duration-300 rounded-full ${
+                  isCompleted
+                    ? 'w-3 h-3 bg-[#0B2A4A]'
+                    : isCurrent
+                    ? 'w-3 h-3 bg-[#0E9594]'
+                    : 'w-3 h-3 bg-[#E5EAF0]'
+                }`}
+              />
+            )
+          })}
+          <span className="ml-2 text-sm text-[#5B6B7C]">Paso {paso} de {TOTAL_PASOS}</span>
         </div>
-        <p className="text-sm text-gray-400 mt-2">Paso {paso} de {TOTAL_PASOS}</p>
       </header>
 
       <main className="flex-1 px-5 pt-8 pb-4 max-w-lg mx-auto w-full">
@@ -144,14 +155,24 @@ export default function Registrar() {
         <button
           onClick={siguiente}
           disabled={guardando}
-          className="w-full bg-[#1a56a4] hover:bg-[#154a8a] active:scale-95 transition-all text-white text-xl font-bold py-4 rounded-2xl flex items-center justify-center gap-2 shadow-md disabled:opacity-60"
+          className={`w-full text-white text-xl font-bold py-4 rounded-[20px] flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-60 ${
+            paso === TOTAL_PASOS
+              ? 'bg-[#16A571]'
+              : 'bg-[#0E9594]'
+          }`}
         >
-          {guardando ? 'Guardando…' : paso === TOTAL_PASOS ? 'Finalizar ✓' : (
-            <>Siguiente <ChevronRight size={22} /></>
-          )}
+          {guardando
+            ? 'Guardando…'
+            : paso === TOTAL_PASOS
+            ? 'Finalizar ✓'
+            : <><span>Siguiente</span><ChevronRight size={22} /></>
+          }
         </button>
         {paso < TOTAL_PASOS && (
-          <button onClick={siguiente} className="w-full text-center text-gray-400 text-base mt-3 py-2">
+          <button
+            onClick={siguiente}
+            className="w-full text-center text-[#5B6B7C] underline text-sm mt-3 py-2"
+          >
             Saltar este paso
           </button>
         )}
@@ -172,21 +193,21 @@ function Paso1({ form, setForm }: { form: FormData; setForm: (f: FormData) => vo
   ]
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">¿Cómo te sientes hoy en general?</h2>
-      <p className="text-base text-gray-400 mb-8">Toca el emoji que mejor te represente</p>
+      <h2 className="text-2xl font-bold text-[#0E1B2A] mb-2">¿Cómo te sientes hoy en general?</h2>
+      <p className="text-base text-[#5B6B7C] mb-8">Toca el emoji que mejor te represente</p>
       <div className="flex justify-between gap-2">
         {opciones.map(({ valor, emoji, label }) => (
           <button
             key={valor}
             onClick={() => setForm({ ...form, bienestar_general: valor })}
-            className={`flex-1 flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-all active:scale-95 ${
+            className={`flex-1 flex flex-col items-center gap-2 py-4 rounded-[16px] border-2 transition-all active:scale-95 ${
               form.bienestar_general === valor
-                ? 'border-[#1a56a4] bg-[#e8f0fc] scale-105'
-                : 'border-gray-200 bg-white'
+                ? 'border-[#0E9594] bg-[#E6F4F4] text-[#0B2A4A] scale-105'
+                : 'border-[#E5EAF0] bg-white text-[#0E1B2A]'
             }`}
           >
             <span className="text-3xl">{emoji}</span>
-            <span className="text-xs text-gray-500 font-medium leading-tight text-center">{label}</span>
+            <span className="text-xs font-medium leading-tight text-center">{label}</span>
           </button>
         ))}
       </div>
@@ -199,38 +220,38 @@ function Paso1({ form, setForm }: { form: FormData; setForm: (f: FormData) => vo
 function Paso2({ form, setForm }: { form: FormData; setForm: (f: FormData) => void }) {
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">¿Tomaste tu medicamento hoy?</h2>
-      <p className="text-base text-gray-400 mb-8">Sé honesto, tu médico te ayuda mejor así 💙</p>
+      <h2 className="text-2xl font-bold text-[#0E1B2A] mb-2">¿Tomaste tu medicamento hoy?</h2>
+      <p className="text-base text-[#5B6B7C] mb-8">Sé honesto, tu médico te ayuda mejor así</p>
       <div className="flex gap-4 mb-6">
         <button
           onClick={() => setForm({ ...form, tomo_medicamento: true })}
-          className={`flex-1 py-6 rounded-2xl border-2 text-xl font-bold transition-all active:scale-95 ${
+          className={`flex-1 py-6 rounded-[16px] border-2 text-xl font-bold transition-all active:scale-95 ${
             form.tomo_medicamento === true
-              ? 'bg-green-500 border-green-500 text-white scale-105'
-              : 'bg-white border-gray-200 text-gray-700'
+              ? 'bg-[#16A571] border-[#16A571] text-white scale-105'
+              : 'bg-white border-[#E5EAF0] text-[#0E1B2A]'
           }`}
         >
-          ✅ Sí
+          Sí
         </button>
         <button
           onClick={() => setForm({ ...form, tomo_medicamento: false })}
-          className={`flex-1 py-6 rounded-2xl border-2 text-xl font-bold transition-all active:scale-95 ${
+          className={`flex-1 py-6 rounded-[16px] border-2 text-xl font-bold transition-all active:scale-95 ${
             form.tomo_medicamento === false
-              ? 'bg-red-400 border-red-400 text-white scale-105'
-              : 'bg-white border-gray-200 text-gray-700'
+              ? 'bg-[#E0533D] border-[#E0533D] text-white scale-105'
+              : 'bg-white border-[#E5EAF0] text-[#0E1B2A]'
           }`}
         >
-          ❌ No
+          No
         </button>
       </div>
       {form.tomo_medicamento === true && (
-        <div className="bg-white rounded-2xl p-4 border border-gray-100">
-          <label className="text-base font-semibold text-gray-600 block mb-2">¿A qué hora? (opcional)</label>
+        <div className="bg-white rounded-[16px] p-4 border border-[#E5EAF0]">
+          <label className="text-base font-semibold text-[#5B6B7C] block mb-2">¿A qué hora? (opcional)</label>
           <input
             type="time"
             value={form.hora_medicamento}
             onChange={(e) => setForm({ ...form, hora_medicamento: e.target.value })}
-            className="w-full text-xl border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-[#1a56a4]"
+            className="w-full text-xl border border-[#E5EAF0] rounded-[16px] px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-[#0E9594]"
           />
         </div>
       )}
@@ -250,17 +271,17 @@ function Paso3({ form, setForm }: { form: FormData; setForm: (f: FormData) => vo
   ]
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">¿Tuviste dolor de cabeza?</h2>
-      <p className="text-base text-gray-400 mb-8">Selecciona la intensidad</p>
+      <h2 className="text-2xl font-bold text-[#0E1B2A] mb-2">¿Tuviste dolor de cabeza?</h2>
+      <p className="text-base text-[#5B6B7C] mb-8">Selecciona la intensidad</p>
       <div className="flex flex-col gap-3">
         {opciones.map(({ valor, label }) => (
           <button
             key={valor}
             onClick={() => setForm({ ...form, dolor_cabeza: valor })}
-            className={`w-full py-4 rounded-2xl border-2 text-lg font-semibold text-left px-5 transition-all active:scale-95 ${
+            className={`w-full py-4 rounded-[16px] border-2 text-lg font-semibold text-left px-5 transition-all active:scale-95 ${
               form.dolor_cabeza === valor
-                ? 'border-[#1a56a4] bg-[#e8f0fc] text-[#1a56a4]'
-                : 'border-gray-200 bg-white text-gray-700'
+                ? 'border-[#0E9594] bg-[#E6F4F4] text-[#0B2A4A]'
+                : 'border-[#E5EAF0] bg-white text-[#0E1B2A]'
             }`}
           >
             {valor === 0 ? '✓ ' : `${valor}. `}{label}
@@ -276,8 +297,8 @@ function Paso3({ form, setForm }: { form: FormData; setForm: (f: FormData) => vo
 function Paso4({ form, setForm }: { form: FormData; setForm: (f: FormData) => void }) {
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">¿Sentiste mareos o hinchazón?</h2>
-      <p className="text-base text-gray-400 mb-8">Puedes marcar ambas si aplica</p>
+      <h2 className="text-2xl font-bold text-[#0E1B2A] mb-2">¿Sentiste mareos o hinchazón?</h2>
+      <p className="text-base text-[#5B6B7C] mb-8">Puedes marcar ambas si aplica</p>
       <div className="flex flex-col gap-4">
         {[
           { campo: 'mareos' as const, emoji: '🌀', label: 'Mareos' },
@@ -286,23 +307,23 @@ function Paso4({ form, setForm }: { form: FormData; setForm: (f: FormData) => vo
           <button
             key={campo}
             onClick={() => setForm({ ...form, [campo]: !form[campo] })}
-            className={`w-full py-5 rounded-2xl border-2 text-xl font-semibold flex items-center gap-4 px-6 transition-all active:scale-95 ${
+            className={`w-full py-5 rounded-[16px] border-2 text-xl font-semibold flex items-center gap-4 px-6 transition-all active:scale-95 ${
               form[campo]
-                ? 'border-[#1a56a4] bg-[#e8f0fc] text-[#1a56a4]'
-                : 'border-gray-200 bg-white text-gray-700'
+                ? 'border-[#0E9594] bg-[#E6F4F4] text-[#0B2A4A]'
+                : 'border-[#E5EAF0] bg-white text-[#0E1B2A]'
             }`}
           >
             <span className="text-3xl">{emoji}</span>
             <span>{label}</span>
-            {form[campo] && <Check className="ml-auto text-[#1a56a4]" size={24} />}
+            {form[campo] && <Check className="ml-auto text-[#0E9594]" size={24} />}
           </button>
         ))}
         <button
           onClick={() => setForm({ ...form, mareos: false, hinchazon: false })}
-          className={`w-full py-5 rounded-2xl border-2 text-xl font-semibold flex items-center gap-4 px-6 transition-all active:scale-95 ${
+          className={`w-full py-5 rounded-[16px] border-2 text-xl font-semibold flex items-center gap-4 px-6 transition-all active:scale-95 ${
             !form.mareos && !form.hinchazon
-              ? 'border-[#1a56a4] bg-[#e8f0fc] text-[#1a56a4]'
-              : 'border-gray-200 bg-white text-gray-700'
+              ? 'border-[#0E9594] bg-[#E6F4F4] text-[#0B2A4A]'
+              : 'border-[#E5EAF0] bg-white text-[#0E1B2A]'
           }`}
         >
           <span className="text-3xl">✓</span>
@@ -318,22 +339,22 @@ function Paso4({ form, setForm }: { form: FormData; setForm: (f: FormData) => vo
 function Paso5({ form, setForm }: { form: FormData; setForm: (f: FormData) => void }) {
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">¿Cómo estuvo tu presión arterial?</h2>
-      <p className="text-base text-gray-400 mb-8">Si no te la mediste, puedes saltar este paso 👆</p>
+      <h2 className="text-2xl font-bold text-[#0E1B2A] mb-2">¿Cómo estuvo tu presión arterial?</h2>
+      <p className="text-base text-[#5B6B7C] mb-8">Si no te la mediste, puedes saltar este paso</p>
       <div className="flex flex-col gap-4">
         {[
           { campo: 'presion_sistolica' as const, label: 'Sistólica (número de arriba)', placeholder: 'ej: 120' },
           { campo: 'presion_diastolica' as const, label: 'Diastólica (número de abajo)', placeholder: 'ej: 80' },
           { campo: 'pulso' as const, label: 'Pulso (pulsaciones por minuto)', placeholder: 'ej: 72' },
         ].map(({ campo, label, placeholder }) => (
-          <div key={campo} className="bg-white rounded-2xl p-5 border border-gray-100">
-            <label className="text-base font-semibold text-gray-600 block mb-2">{label}</label>
+          <div key={campo} className="bg-white rounded-[16px] p-5 border border-[#E5EAF0]">
+            <label className="text-base font-semibold text-[#5B6B7C] block mb-2">{label}</label>
             <input
               type="number"
               placeholder={placeholder}
               value={form[campo]}
               onChange={(e) => setForm({ ...form, [campo]: e.target.value })}
-              className="w-full text-2xl font-bold border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-[#1a56a4]"
+              className="w-full text-2xl font-bold border border-[#E5EAF0] rounded-[16px] px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-[#0E9594]"
             />
           </div>
         ))}
@@ -347,14 +368,14 @@ function Paso5({ form, setForm }: { form: FormData; setForm: (f: FormData) => vo
 function Paso6({ form, setForm }: { form: FormData; setForm: (f: FormData) => void }) {
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">¿Algo más que quieras anotar?</h2>
-      <p className="text-base text-gray-400 mb-8">Cualquier cosa que quieras que tu médico sepa — es opcional 😊</p>
+      <h2 className="text-2xl font-bold text-[#0E1B2A] mb-2">¿Algo más que quieras anotar?</h2>
+      <p className="text-base text-[#5B6B7C] mb-8">Cualquier cosa que quieras que tu médico sepa — es opcional</p>
       <textarea
         value={form.notas}
         onChange={(e) => setForm({ ...form, notas: e.target.value })}
         placeholder="Ej: Me sentí cansada después del almuerzo, dormí mal..."
         rows={6}
-        className="w-full text-lg border border-gray-200 rounded-2xl px-5 py-4 focus:outline-none focus:border-[#1a56a4] bg-white resize-none"
+        className="w-full text-lg border border-[#E5EAF0] rounded-[16px] px-5 py-4 bg-white focus:outline-none focus:ring-2 focus:ring-[#0E9594] resize-none"
       />
     </div>
   )
