@@ -10,6 +10,7 @@ type EventoTipo =
   | 'receta_procesada'
   | 'recordatorio_enviado'
   | 'recordatorio_respondido'
+  | 'chat_usado'
 
 interface TrackOptions {
   userId?: string

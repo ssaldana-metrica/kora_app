@@ -9,6 +9,8 @@ import {
   Upload, Camera, FileText, Trash2,
 } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 interface Documento {
   id: string
   nombre_archivo: string

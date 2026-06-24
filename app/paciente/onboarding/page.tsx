@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Stethoscope, Camera, ClipboardList, CheckCircle2, ArrowRight } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 interface Paso {
   clave: 'medico' | 'receta' | 'registro'
   titulo: string
@@ -80,8 +82,8 @@ export default function OnboardingPaciente() {
 
   if (!pasos) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8faff]">
-        <div className="w-10 h-10 rounded-full border-4 border-[#1a56a4] border-t-transparent animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-[#F4F7FB]">
+        <div className="w-12 h-12 rounded-full border-4 border-[#0E9594] border-t-transparent animate-spin" />
       </div>
     )
   }
@@ -90,47 +92,90 @@ export default function OnboardingPaciente() {
   const todoListo = completados === pasos.length
 
   return (
-    <div className="min-h-screen bg-[#f8faff] pb-12">
-      <header className="bg-white px-5 pt-12 pb-6 shadow-sm">
-        <h1 className="text-2xl font-bold text-gray-800">
-          ¡Bienvenido{nombre ? `, ${nombre}` : ''}! 👋
-        </h1>
-        <p className="text-base text-gray-500 mt-1">
-          Configura KORA en 3 pasos. Puedes hacerlos en cualquier orden.
+    <div className="min-h-screen bg-[#F4F7FB] pb-16">
+      {/* Header */}
+      <header className="bg-white px-6 pt-14 pb-8 shadow-sm">
+        <p className="text-base font-semibold text-[#0E9594] mb-1 tracking-wide uppercase">
+          Bienvenido{nombre ? `, ${nombre}` : ''}
         </p>
-        <div className="flex gap-2 mt-4">
+        <h1 className="text-3xl font-bold text-[#0E1B2A] leading-tight">
+          Configura KORA{'\n'}en 3 pasos
+        </h1>
+        <p className="text-base text-[#5B6B7C] mt-2">
+          Puedes hacerlos en cualquier orden.
+        </p>
+
+        {/* Progress bar */}
+        <div className="flex gap-2 mt-6">
           {pasos.map(p => (
             <div
               key={p.clave}
-              className={`h-2 flex-1 rounded-full ${p.hecho ? 'bg-[#22c55e]' : 'bg-gray-200'}`}
-            />
+              className="h-2 flex-1 rounded-full overflow-hidden bg-[#E5EAF0]"
+            >
+              {p.hecho && (
+                <div className="h-full w-full rounded-full bg-[#0B2A4A]" />
+              )}
+            </div>
           ))}
         </div>
-        <p className="text-sm text-gray-400 mt-2">{completados} de {pasos.length} completados</p>
+        <p className="text-base text-[#5B6B7C] mt-3 font-medium">
+          {completados} de {pasos.length} completados
+        </p>
       </header>
 
-      <main className="px-4 pt-5 flex flex-col gap-4 max-w-lg mx-auto">
+      {/* Step cards */}
+      <main className="px-4 pt-6 flex flex-col gap-5 max-w-lg mx-auto">
+        {todoListo && (
+          <div className="bg-white rounded-[20px] p-8 shadow-md text-center">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-20 h-20 rounded-full bg-[#E6F4F4] flex items-center justify-center">
+                <CheckCircle2 className="text-[#0E9594]" size={40} />
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold text-[#0E1B2A] mb-2">
+              ¡Todo listo!
+            </h2>
+            <p className="text-base text-[#5B6B7C]">
+              Completaste la configuración. KORA está lista para acompañarte.
+            </p>
+          </div>
+        )}
+
         {pasos.map((p, i) => (
           <div
             key={p.clave}
-            className={`rounded-3xl p-5 border shadow-sm ${p.hecho ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-gray-100'}`}
+            className={`bg-white rounded-[20px] p-8 shadow-md ${p.hecho ? 'opacity-75' : ''}`}
           >
-            <div className="flex items-start gap-4">
-              <div className={`rounded-2xl p-3 shrink-0 ${p.hecho ? 'bg-emerald-100' : 'bg-[#e8f0fc]'}`}>
+            <div className="flex items-start gap-5">
+              {/* Icon circle */}
+              <div className="shrink-0 w-20 h-20 rounded-full bg-[#E6F4F4] flex items-center justify-center">
                 {p.hecho
-                  ? <CheckCircle2 className="text-emerald-600" size={28} />
-                  : <p.Icono className="text-[#1a56a4]" size={28} />}
+                  ? <CheckCircle2 className="text-[#0E9594]" size={36} />
+                  : <p.Icono className="text-[#0E9594]" size={36} />}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-gray-400">Paso {i + 1}</p>
-                <h2 className="text-lg font-bold text-gray-800 leading-tight">{p.titulo}</h2>
-                <p className="text-base text-gray-500 mt-1">{p.descripcion}</p>
-                {!p.hecho && (
+
+              {/* Content */}
+              <div className="flex-1 min-w-0 pt-1">
+                <p className="text-base font-semibold text-[#5B6B7C] mb-1">
+                  Paso {i + 1}
+                </p>
+                <h2 className="text-2xl font-bold text-[#0E1B2A] leading-tight">
+                  {p.titulo}
+                </h2>
+                <p className="text-base text-[#5B6B7C] mt-2">
+                  {p.descripcion}
+                </p>
+
+                {p.hecho ? (
+                  <p className="mt-4 text-base font-bold text-[#0E9594]">
+                    Completado
+                  </p>
+                ) : (
                   <Link
                     href={p.href}
-                    className="mt-4 inline-flex items-center gap-2 bg-[#1a56a4] text-white text-base font-bold px-5 py-3 rounded-2xl active:scale-95 transition-transform"
+                    className="mt-5 flex items-center justify-center gap-2 bg-[#0E9594] text-white text-lg font-bold py-4 rounded-[20px] w-full active:scale-95 transition-transform shadow-sm"
                   >
-                    {p.cta} <ArrowRight size={18} />
+                    {p.cta} <ArrowRight size={20} />
                   </Link>
                 )}
               </div>
@@ -138,14 +183,24 @@ export default function OnboardingPaciente() {
           </div>
         ))}
 
-        <Link
-          href="/paciente/dashboard"
-          className={`block w-full text-center text-xl font-bold py-4 rounded-2xl mt-2 active:scale-95 transition-all shadow-md ${
-            todoListo ? 'bg-[#22c55e] text-white' : 'bg-white text-[#1a56a4] border border-gray-200'
-          }`}
-        >
-          {todoListo ? '¡Listo! Ir a mi inicio' : 'Saltar por ahora'}
-        </Link>
+        {/* Bottom action */}
+        {todoListo ? (
+          <Link
+            href="/paciente/dashboard"
+            className="block w-full text-center bg-[#0E9594] text-white text-2xl font-bold py-4 rounded-[20px] mt-2 active:scale-95 transition-all shadow-md"
+          >
+            Ir a mi inicio
+          </Link>
+        ) : (
+          <div className="mt-2 text-center">
+            <Link
+              href="/paciente/dashboard"
+              className="text-base text-[#5B6B7C] underline underline-offset-2"
+            >
+              Saltar por ahora
+            </Link>
+          </div>
+        )}
       </main>
     </div>
   )

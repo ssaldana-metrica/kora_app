@@ -5,21 +5,17 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
-  Users,
   Copy,
   CheckCircle,
-  AlertCircle,
-  XCircle,
-  Clock,
-  Activity,
-  Pill,
   LogOut,
-  RefreshCw,
   ChevronRight,
   Stethoscope,
   QrCode,
+  Users,
 } from 'lucide-react'
 import DemoBadge from '@/components/DemoBadge'
+
+export const dynamic = 'force-dynamic'
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
 
@@ -40,6 +36,9 @@ interface Paciente {
 
 interface MedicoProfile {
   nombre: string
+  apellido?: string
+  especialidad?: string
+  role?: string
   codigo_medico: string
 }
 
@@ -59,6 +58,36 @@ function tiempoDesde(fechaISO: string): string {
   return `Hace ${Math.floor(diffDias / 7)} semanas`
 }
 
+function datoClave(paciente: Paciente): string {
+  if (paciente.presion) {
+    const diasTexto =
+      paciente.diasSinRegistrar > 0
+        ? ` · ${paciente.diasSinRegistrar} días alto`
+        : ''
+    return `${paciente.presion.s}/${paciente.presion.d}${diasTexto}`
+  }
+  if (paciente.adherencia != null) {
+    return `Adherencia ${paciente.adherencia}%`
+  }
+  if (paciente.ultimoRegistro) {
+    return tiempoDesde(paciente.ultimoRegistro)
+  }
+  return 'Sin registros aún'
+}
+
+const SEMAFORO_ORDER: Record<Paciente['semaforo'], number> = {
+  rojo: 0,
+  amarillo: 1,
+  verde: 2,
+  'sin-datos': 3,
+}
+
+function ordenarPorRiesgo(lista: Paciente[]): Paciente[] {
+  return [...lista].sort(
+    (a, b) => SEMAFORO_ORDER[a.semaforo] - SEMAFORO_ORDER[b.semaforo],
+  )
+}
+
 // ── Panel de alertas ─────────────────────────────────────────────────────
 
 function PanelAlertas({ pacientes }: { pacientes: Paciente[] }) {
@@ -69,29 +98,29 @@ function PanelAlertas({ pacientes }: { pacientes: Paciente[] }) {
   if (enRiesgo.length === 0) return null
 
   return (
-    <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 shadow-sm">
-      <div className="flex items-center gap-2 mb-3">
-        <AlertCircle size={18} className="text-red-600" />
-        <h2 className="font-bold text-red-800">
-          {enRiesgo.length === 1
-            ? '1 paciente necesita tu atención'
-            : `${enRiesgo.length} pacientes necesitan tu atención`}
-        </h2>
-      </div>
+    <div
+      className="mx-4 mt-4 rounded-[16px] p-4 border-l-4 border-[#E0533D]"
+      style={{ background: 'rgba(224,83,61,0.08)' }}
+    >
+      <p className="font-bold text-[#E0533D] mb-3">
+        ⚠ {enRiesgo.length === 1
+          ? '1 paciente necesita tu atención'
+          : `${enRiesgo.length} pacientes necesitan tu atención`}
+      </p>
       <div className="space-y-2">
         {enRiesgo.map(p => (
           <Link
             key={p.id}
             href={`/medico/paciente/${p.id}`}
-            className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-red-100 hover:border-red-300 transition-colors"
+            className="flex items-center justify-between gap-3 bg-white rounded-[12px] px-3 py-2.5 border border-[#E0533D]/20 hover:border-[#E0533D]/50 transition-colors"
           >
             <div className="min-w-0">
-              <p className="font-semibold text-gray-900 text-sm truncate">{p.nombre}</p>
-              <p className="text-xs text-red-600 truncate">
-                {p.motivosAlerta?.join(' · ')}
+              <p className="font-semibold text-[#0E1B2A] text-sm truncate">{p.nombre}</p>
+              <p className="text-xs text-[#E0533D] truncate">
+                {p.motivosAlerta?.[0]}
               </p>
             </div>
-            <ChevronRight size={16} className="text-red-400 flex-shrink-0" />
+            <ChevronRight size={16} className="text-[#E0533D] flex-shrink-0" />
           </Link>
         ))}
       </div>
@@ -102,124 +131,72 @@ function PanelAlertas({ pacientes }: { pacientes: Paciente[] }) {
 // ── Tarjeta paciente ───────────────────────────────────────────────────────
 
 function TarjetaPaciente({ paciente }: { paciente: Paciente }) {
-  const semaforoConfig = {
-    verde: {
-      bg: 'bg-emerald-50',
-      border: 'border-emerald-200',
-      badge: 'bg-emerald-100 text-emerald-700',
-      dot: 'bg-emerald-500',
-      icon: CheckCircle,
-      label: 'Bien',
-    },
-    amarillo: {
-      bg: 'bg-amber-50',
-      border: 'border-amber-200',
-      badge: 'bg-amber-100 text-amber-700',
-      dot: 'bg-amber-400',
-      icon: AlertCircle,
-      label: 'Atención',
-    },
+  const avatarConfig = {
     rojo: {
-      bg: 'bg-red-50',
-      border: 'border-red-200',
-      badge: 'bg-red-100 text-red-700',
-      dot: 'bg-red-500',
-      icon: XCircle,
+      avatarBg: 'bg-[#E0533D]/10',
+      avatarText: 'text-[#E0533D]',
+      tagBg: 'bg-[#E0533D]/10',
+      tagText: 'text-[#E0533D]',
       label: 'Alerta',
     },
+    amarillo: {
+      avatarBg: 'bg-[#E8A317]/10',
+      avatarText: 'text-[#E8A317]',
+      tagBg: 'bg-[#E8A317]/10',
+      tagText: 'text-[#E8A317]',
+      label: 'Atención',
+    },
+    verde: {
+      avatarBg: 'bg-[#16A571]/10',
+      avatarText: 'text-[#16A571]',
+      tagBg: 'bg-[#16A571]/10',
+      tagText: 'text-[#16A571]',
+      label: 'Bien',
+    },
     'sin-datos': {
-      bg: 'bg-gray-50',
-      border: 'border-gray-200',
-      badge: 'bg-gray-100 text-gray-500',
-      dot: 'bg-gray-400',
-      icon: Clock,
+      avatarBg: 'bg-gray-100',
+      avatarText: 'text-gray-500',
+      tagBg: 'bg-gray-100',
+      tagText: 'text-gray-500',
       label: 'Sin datos',
     },
   }
 
-  const cfg = semaforoConfig[paciente.semaforo]
+  const cfg = avatarConfig[paciente.semaforo]
+  const inicial = paciente.nombre.trim().charAt(0).toUpperCase()
 
   return (
     <Link href={`/medico/paciente/${paciente.id}`}>
       <div
-        className={`
-          relative rounded-xl border-2 ${cfg.border} ${cfg.bg}
-          p-5 cursor-pointer transition-all duration-200
-          hover:shadow-md hover:-translate-y-0.5
-          group
-        `}
+        className="bg-white rounded-[20px] border border-[#E5EAF0] shadow p-4 w-full flex items-center gap-4 cursor-pointer hover:shadow-md transition-shadow"
+        style={{ minHeight: '72px' }}
       >
-        <div className="flex items-start justify-between mb-3">
-          <div>
-            <h3 className="font-semibold text-gray-900 text-base leading-tight">
-              {paciente.nombre}
-            </h3>
-            {paciente.enfermedad && (
-              <p className="text-xs text-gray-500 mt-0.5">{paciente.enfermedad}</p>
-            )}
-            {paciente.es_demo && <DemoBadge className="mt-1.5" />}
-          </div>
-          <span className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${cfg.badge}`}>
-            <span className={`w-2 h-2 rounded-full ${cfg.dot} inline-block`} />
+        {/* Avatar */}
+        <div
+          className={`w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center ${cfg.avatarBg} ${cfg.avatarText} text-xl font-bold`}
+        >
+          {inicial}
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-[#0E1B2A] text-base leading-tight truncate">
+            {paciente.nombre}
+          </p>
+          <p className="text-sm text-[#5B6B7C] truncate mt-0.5">
+            {datoClave(paciente)}
+          </p>
+          {paciente.es_demo && <DemoBadge className="mt-1" />}
+        </div>
+
+        {/* Right: tag + chevron */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span
+            className={`text-xs font-semibold px-2 py-1 rounded-full ${cfg.tagBg} ${cfg.tagText}`}
+          >
             {cfg.label}
           </span>
-        </div>
-
-        <div className="space-y-2 mt-3">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Clock size={14} className="text-gray-400 flex-shrink-0" />
-            <span>
-              {paciente.ultimoRegistro
-                ? tiempoDesde(paciente.ultimoRegistro)
-                : 'Sin registros aún'}
-            </span>
-          </div>
-
-          {paciente.presion ? (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Activity size={14} className="text-gray-400 flex-shrink-0" />
-              <span>
-                Presión:{' '}
-                <span className={`font-semibold ${
-                  paciente.presion.s >= 140 || paciente.presion.d >= 90
-                    ? 'text-red-600'
-                    : paciente.presion.s >= 130 || paciente.presion.d >= 85
-                    ? 'text-amber-600'
-                    : 'text-emerald-700'
-                }`}>
-                  {paciente.presion.s}/{paciente.presion.d}
-                </span>{' '}
-                mmHg
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-              <Activity size={14} className="flex-shrink-0" />
-              <span>Sin presión registrada</span>
-            </div>
-          )}
-
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Pill size={14} className="text-gray-400 flex-shrink-0" />
-            <span>
-              Medicamento ayer:{' '}
-              {paciente.tomóMedicamentoAyer === true ? (
-                <span className="text-emerald-600 font-medium">✓ Tomó</span>
-              ) : paciente.tomóMedicamentoAyer === false ? (
-                <span className="text-red-600 font-medium">✗ No tomó</span>
-              ) : (
-                <span className="text-gray-400">Sin dato</span>
-              )}
-            </span>
-          </div>
-        </div>
-
-        <div className="mt-4 pt-3 border-t border-gray-200 flex items-center justify-between">
-          <span className="text-xs text-[#0d3d7a] font-medium">Ver detalle</span>
-          <ChevronRight
-            size={16}
-            className="text-[#0d3d7a] group-hover:translate-x-1 transition-transform"
-          />
+          <ChevronRight size={18} className="text-[#5B6B7C]" />
         </div>
       </div>
     </Link>
@@ -250,7 +227,7 @@ export default function MedicoDashboard() {
 
       const { data: perfil } = await supabase
         .from('profiles')
-        .select('nombre, codigo_medico, role')
+        .select('nombre, apellido, especialidad, codigo_medico, role')
         .eq('id', user.id)
         .single()
 
@@ -259,7 +236,12 @@ export default function MedicoDashboard() {
         return
       }
 
-      setMedico({ nombre: perfil.nombre, codigo_medico: perfil.codigo_medico })
+      setMedico({
+        nombre: perfil.nombre,
+        apellido: perfil.apellido,
+        especialidad: perfil.especialidad,
+        codigo_medico: perfil.codigo_medico,
+      })
 
       const res = await fetch('/api/medicos/pacientes')
       if (res.ok) {
@@ -286,17 +268,6 @@ export default function MedicoDashboard() {
     }
   }
 
-  const pacientesFiltrados =
-    filtro === 'todos'
-      ? pacientes
-      : pacientes.filter(p => p.semaforo === filtro)
-
-  const conteos = {
-    verde: pacientes.filter(p => p.semaforo === 'verde').length,
-    amarillo: pacientes.filter(p => p.semaforo === 'amarillo').length,
-    rojo: pacientes.filter(p => p.semaforo === 'rojo').length,
-  }
-
   function saludo() {
     const hora = new Date().getHours()
     if (hora < 12) return 'Buenos días'
@@ -304,181 +275,231 @@ export default function MedicoDashboard() {
     return 'Buenas noches'
   }
 
-  const apellido = medico?.nombre?.split(' ').slice(-1)[0] ?? ''
+  const apellido =
+    medico?.apellido ?? medico?.nombre?.split(' ').slice(-1)[0] ?? ''
+
+  const especialidad = medico?.especialidad ?? 'Médico'
+
+  const pacientesFiltrados =
+    filtro === 'todos'
+      ? pacientes
+      : pacientes.filter(p => p.semaforo === filtro)
+
+  const ordenados = ordenarPorRiesgo(pacientesFiltrados)
+
+  const prioridad = ordenados.filter(
+    p => p.semaforo === 'rojo' || p.semaforo === 'amarillo',
+  )
+  const controlados = ordenados.filter(p => p.semaforo === 'verde')
+  const sinDatos = ordenados.filter(p => p.semaforo === 'sin-datos')
+
+  const conteos = {
+    verde: pacientes.filter(p => p.semaforo === 'verde').length,
+    rojo: pacientes.filter(p => p.semaforo === 'rojo').length,
+  }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F4F6F9] flex items-center justify-center">
         <div className="text-center">
-          <div className="w-10 h-10 border-4 border-[#0d3d7a] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-gray-500 text-sm">Cargando pacientes...</p>
+          <div className="w-10 h-10 border-4 border-[#0B2A4A] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-[#5B6B7C] text-sm">Cargando pacientes...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F4F6F9]">
 
-      {/* Header */}
-      <header className="bg-[#0d3d7a] text-white shadow-lg">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center">
-                <Stethoscope size={20} />
-              </div>
-              <div>
-                <p className="text-blue-200 text-xs font-medium">KORA · Plataforma Médica</p>
-                <h1 className="font-bold text-lg leading-tight">
-                  {saludo()}, Dr. {apellido}
-                </h1>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Link
-                href="/medico/escanear"
-                className="flex items-center gap-1.5 text-sm bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition-colors"
-                title="Escanear QR del paciente"
-              >
-                <QrCode size={15} />
-                <span className="hidden sm:inline">Escanear QR</span>
-              </Link>
-              <button
-                onClick={cargarDatos}
-                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
-                title="Actualizar"
-              >
-                <RefreshCw size={16} />
-              </button>
-              <button
-                onClick={cerrarSesion}
-                className="flex items-center gap-1.5 text-sm bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition-colors"
-              >
-                <LogOut size={15} />
-                <span className="hidden sm:inline">Salir</span>
-              </button>
-            </div>
+      {/* ── Header ── */}
+      <header
+        className="w-full pt-12 pb-6 px-5"
+        style={{ background: 'linear-gradient(135deg, #0B2A4A 0%, #123A63 100%)' }}
+      >
+        {/* Row 1: brand */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Stethoscope size={24} className="text-white" />
+            <span className="text-sm font-bold text-white/60">KORA</span>
+            <span className="text-sm text-white/40">· Plataforma Clínica</span>
+          </div>
+          {/* Icon buttons */}
+          <div className="flex items-center gap-2">
+            <Link
+              href="/medico/escanear"
+              className="flex items-center justify-center w-9 h-9 rounded-[12px] transition-colors"
+              style={{ background: 'rgba(255,255,255,0.2)' }}
+              title="Escanear QR del paciente"
+            >
+              <QrCode size={18} className="text-white" />
+            </Link>
+            <button
+              onClick={cerrarSesion}
+              className="flex items-center justify-center w-9 h-9 rounded-[12px] transition-colors"
+              style={{ background: 'rgba(255,255,255,0.2)' }}
+              title="Cerrar sesión"
+            >
+              <LogOut size={18} className="text-white" />
+            </button>
           </div>
         </div>
+
+        {/* Row 2: greeting */}
+        <h1 className="text-2xl font-extrabold text-white mt-1">
+          {saludo()}, Dr. {apellido}
+        </h1>
+
+        {/* Row 3: speciality */}
+        <p className="text-sm text-blue-200 mt-0.5">{especialidad}</p>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      {/* ── Alert panel ── */}
+      <PanelAlertas pacientes={pacientes} />
 
-        {/* Código del médico */}
-        <div className="bg-white rounded-xl border border-blue-100 p-4 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                Tu código único KORA
-              </p>
-              <div className="flex items-center gap-3">
-                <span className="text-2xl font-bold text-[#0d3d7a] tracking-widest font-mono">
-                  {medico?.codigo_medico ?? '—'}
-                </span>
-                <button
-                  onClick={copiarCodigo}
-                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${
-                    copiado
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  {copiado ? <CheckCircle size={13} /> : <Copy size={13} />}
-                  {copiado ? 'Copiado' : 'Copiar'}
-                </button>
-              </div>
-            </div>
-            <p className="text-sm text-gray-500 max-w-xs">
-              Comparte este código con tus pacientes para que se vinculen a tu cuenta.
-            </p>
-          </div>
-        </div>
+      <div className="px-4 pb-10 space-y-5 mt-5">
 
-        {/* Panel de alertas automáticas */}
-        <PanelAlertas pacientes={pacientes} />
-
-        {/* Resumen numérico */}
+        {/* ── Stats row ── */}
         {pacientes.length > 0 && (
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { color: 'emerald', label: 'Bien',     count: conteos.verde,    semaforo: 'verde'    as const },
-              { color: 'amber',   label: 'Atención', count: conteos.amarillo, semaforo: 'amarillo' as const },
-              { color: 'red',     label: 'Alerta',   count: conteos.rojo,     semaforo: 'rojo'     as const },
-            ].map(({ color, label, count, semaforo }) => (
+          <div className="bg-white rounded-[20px] border border-[#E5EAF0] p-4 grid grid-cols-3 divide-x divide-[#E5EAF0]">
+            <div className="flex flex-col items-center px-2">
+              <span className="text-3xl font-extrabold text-[#0E1B2A]">{pacientes.length}</span>
+              <span className="text-xs text-[#5B6B7C] text-center mt-0.5">pacientes</span>
+            </div>
+            <div className="flex flex-col items-center px-2">
+              <span className="text-3xl font-extrabold text-[#0E1B2A]">{conteos.verde}</span>
+              <span className="text-xs text-[#5B6B7C] text-center mt-0.5">controlados</span>
+            </div>
+            <div className="flex flex-col items-center px-2">
+              <span className="text-3xl font-extrabold text-[#0E1B2A]">{conteos.rojo}</span>
+              <span className="text-xs text-[#5B6B7C] text-center mt-0.5">en alerta</span>
+            </div>
+          </div>
+        )}
+
+        {/* ── Filter chips ── */}
+        {pacientes.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+            {(
+              [
+                { key: 'todos', label: 'Todos', count: pacientes.length },
+                { key: 'rojo', label: 'Alerta', count: pacientes.filter(p => p.semaforo === 'rojo').length },
+                { key: 'amarillo', label: 'Atención', count: pacientes.filter(p => p.semaforo === 'amarillo').length },
+                { key: 'verde', label: 'Bien', count: conteos.verde },
+              ] as const
+            ).map(({ key, label, count }) => (
               <button
-                key={semaforo}
-                onClick={() => setFiltro(filtro === semaforo ? 'todos' : semaforo)}
-                className={`
-                  rounded-xl p-4 text-center border-2 transition-all shadow-sm
-                  ${filtro === semaforo
-                    ? `border-${color}-400 bg-${color}-50`
-                    : 'border-transparent bg-white hover:bg-gray-50'
-                  }
-                `}
+                key={key}
+                onClick={() => setFiltro(key)}
+                className={`flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all ${
+                  filtro === key
+                    ? 'bg-[#0B2A4A] text-white border-[#0B2A4A]'
+                    : 'bg-white text-[#5B6B7C] border-[#E5EAF0] hover:border-[#0B2A4A]/30'
+                }`}
               >
-                <p className={`text-3xl font-bold text-${color}-600`}>{count}</p>
-                <p className={`text-xs font-medium text-${color}-700 mt-0.5`}>{label}</p>
+                {label} {count > 0 && <span className="opacity-70">({count})</span>}
               </button>
             ))}
           </div>
         )}
 
-        {/* Grid de pacientes */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900 flex items-center gap-2">
-              <Users size={18} className="text-[#0d3d7a]" />
-              {filtro === 'todos'
-                ? `Todos los pacientes (${pacientes.length})`
-                : `Filtro: ${filtro} (${pacientesFiltrados.length})`}
-            </h2>
-            {filtro !== 'todos' && (
-              <button
-                onClick={() => setFiltro('todos')}
-                className="text-xs text-[#0d3d7a] hover:underline"
-              >
-                Ver todos
-              </button>
-            )}
+        {/* ── Patient list ── */}
+        {pacientes.length === 0 ? (
+          <div className="bg-white rounded-[20px] border border-[#E5EAF0] p-10 text-center">
+            <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Users size={28} className="text-[#0B2A4A]" />
+            </div>
+            <h3 className="font-bold text-[#0E1B2A] mb-1">Aún no tienes pacientes</h3>
+            <p className="text-[#5B6B7C] text-sm mb-4 max-w-sm mx-auto">
+              Comparte tu código{' '}
+              <span className="font-bold text-[#0B2A4A] font-mono">
+                {medico?.codigo_medico}
+              </span>{' '}
+              con tus pacientes para que se vinculen.
+            </p>
+            <button
+              onClick={copiarCodigo}
+              className="flex items-center gap-2 mx-auto bg-[#0B2A4A] text-white px-4 py-2 rounded-[12px] text-sm font-medium hover:bg-[#123A63] transition-colors"
+            >
+              {copiado ? <CheckCircle size={15} /> : <Copy size={15} />}
+              {copiado ? '¡Copiado!' : 'Copiar mi código'}
+            </button>
           </div>
+        ) : pacientesFiltrados.length === 0 ? (
+          <div className="bg-white rounded-[20px] border border-[#E5EAF0] p-8 text-center text-[#5B6B7C]">
+            No hay pacientes en esta categoría.
+          </div>
+        ) : (
+          <div className="space-y-3">
 
-          {pacientes.length === 0 ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
-              <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users size={28} className="text-[#0d3d7a]" />
+            {/* Prioridad alta */}
+            {prioridad.length > 0 && (
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-[#5B6B7C] mb-2 mt-4 px-1">
+                  Prioridad alta
+                </p>
+                <div className="space-y-3">
+                  {prioridad.map(p => (
+                    <TarjetaPaciente key={p.id} paciente={p} />
+                  ))}
+                </div>
               </div>
-              <h3 className="font-semibold text-gray-800 mb-1">Aún no tienes pacientes</h3>
-              <p className="text-gray-500 text-sm mb-4 max-w-sm mx-auto">
-                Comparte tu código{' '}
-                <span className="font-bold text-[#0d3d7a] font-mono">
-                  {medico?.codigo_medico}
-                </span>{' '}
-                con tus pacientes para que se vinculen.
-              </p>
-              <button
-                onClick={copiarCodigo}
-                className="flex items-center gap-2 mx-auto bg-[#0d3d7a] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0b3268] transition-colors"
-              >
-                {copiado ? <CheckCircle size={15} /> : <Copy size={15} />}
-                {copiado ? '¡Copiado!' : 'Copiar mi código'}
-              </button>
-            </div>
-          ) : pacientesFiltrados.length === 0 ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500">
-              No hay pacientes en esta categoría.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {pacientesFiltrados.map(p => (
-                <TarjetaPaciente key={p.id} paciente={p} />
-              ))}
-            </div>
-          )}
+            )}
+
+            {/* Controlados */}
+            {controlados.length > 0 && (
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-[#5B6B7C] mb-2 mt-4 px-1">
+                  Controlados
+                </p>
+                <div className="space-y-3">
+                  {controlados.map(p => (
+                    <TarjetaPaciente key={p.id} paciente={p} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Sin datos */}
+            {sinDatos.length > 0 && (
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-[#5B6B7C] mb-2 mt-4 px-1">
+                  Sin datos recientes
+                </p>
+                <div className="space-y-3">
+                  {sinDatos.map(p => (
+                    <TarjetaPaciente key={p.id} paciente={p} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+          </div>
+        )}
+
+        {/* ── Código médico card ── */}
+        <div className="bg-white rounded-[20px] border border-[#E5EAF0] p-5">
+          <p className="text-xs uppercase tracking-widest text-[#5B6B7C] mb-2">
+            Tu código KORA
+          </p>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-2xl font-bold tracking-widest text-[#0B2A4A] font-mono">
+              {medico?.codigo_medico ?? '—'}
+            </span>
+            <button
+              onClick={copiarCodigo}
+              className="flex items-center gap-1.5 bg-[#E6F4F4] text-[#0E9594] rounded-[12px] px-3 py-1.5 text-sm font-medium hover:bg-[#d0ecec] transition-colors flex-shrink-0"
+            >
+              {copiado ? <CheckCircle size={14} /> : <Copy size={14} />}
+              {copiado ? 'Copiado' : 'Copiar'}
+            </button>
+          </div>
+          <p className="text-xs text-[#5B6B7C] mt-2">
+            Comparte este código con tus pacientes para que se vinculen a tu cuenta.
+          </p>
         </div>
 
-      </main>
+      </div>
     </div>
   )
-} 
+}

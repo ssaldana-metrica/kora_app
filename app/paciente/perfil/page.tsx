@@ -20,6 +20,8 @@ import {
   Shield,
 } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 const NAV = [
   { href: '/paciente/dashboard', label: 'Inicio', Icon: Home },
   { href: '/paciente/registrar', label: 'Registrar', Icon: ClipboardList },

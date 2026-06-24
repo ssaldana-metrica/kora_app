@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "KORA – Seguimiento de Salud",
-  description: "Monitorea tu salud diariamente y mantén a tu médico informado entre consultas.",
+  title: "KORA — Tu salud monitoreada",
+  description: "Plataforma de salud para pacientes crónicos y sus médicos",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -28,8 +28,8 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "KORA",
-    title: "KORA – Seguimiento de Salud",
-    description: "Tu salud, monitoreada entre consultas.",
+    title: "KORA — Tu salud monitoreada",
+    description: "Plataforma de salud para pacientes crónicos y sus médicos",
   },
 };
 

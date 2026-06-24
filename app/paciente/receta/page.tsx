@@ -13,7 +13,10 @@ import {
   Trash2,
   ArrowLeft,
   Loader2,
+  Info,
 } from 'lucide-react'
+
+export const dynamic = 'force-dynamic'
 
 interface MedicamentoPendiente {
   nombre: string
@@ -114,14 +117,15 @@ export default function RecetaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8faff] pb-8">
-      <header className="bg-white px-4 pt-12 pb-5 shadow-sm flex items-center gap-3">
-        <Link href="/paciente/documentos" className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors">
-          <ArrowLeft size={20} className="text-gray-700" />
+    <div className="min-h-screen bg-[#F4F7FB] pb-8">
+      {/* Header */}
+      <header className="bg-white px-4 pt-12 pb-5 flex items-center gap-3">
+        <Link href="/paciente/documentos" className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
+          <ArrowLeft size={22} className="text-[#0E1B2A]" />
         </Link>
         <div>
-          <h1 className="text-xl font-bold text-gray-800">Fotografiar receta</h1>
-          <p className="text-sm text-gray-400">KORA leerá tus medicamentos automáticamente</p>
+          <h1 className="text-xl font-bold text-[#0E1B2A]">Fotografiar receta</h1>
+          <p className="text-sm text-[#5B6B7C]">KORA leerá tus medicamentos automáticamente</p>
         </div>
       </header>
 
@@ -130,12 +134,12 @@ export default function RecetaPage() {
         {/* Estado: inicial o procesando */}
         {!procesando && medicamentos.length === 0 && (
           <>
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 text-center">
-              <div className="w-20 h-20 bg-[#e8f0fc] rounded-full flex items-center justify-center mx-auto mb-5">
-                <Camera className="text-[#1a56a4]" size={40} />
+            <div className="bg-white rounded-[20px] p-8 text-center">
+              <div className="w-20 h-20 bg-[#E6F4F4] rounded-full flex items-center justify-center mx-auto mb-5">
+                <Camera className="text-[#0E9594]" size={40} />
               </div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Toma una foto de tu receta</h2>
-              <p className="text-base text-gray-400 mb-7">
+              <h2 className="text-2xl font-bold text-[#0E1B2A] mb-2">Toma una foto de tu receta</h2>
+              <p className="text-base text-[#5B6B7C] mb-7">
                 Apunta la cámara a la receta de tu médico y KORA extraerá automáticamente tus medicamentos con sus horarios.
               </p>
 
@@ -157,7 +161,7 @@ export default function RecetaPage() {
 
               <button
                 onClick={() => fileRef.current?.click()}
-                className="w-full bg-[#1a56a4] text-white text-xl font-bold py-5 rounded-2xl flex items-center justify-center gap-3 active:scale-95 transition-transform shadow-md mb-3"
+                className="w-full bg-[#0B2A4A] text-white text-xl font-bold py-5 rounded-[20px] flex items-center justify-center gap-3 active:scale-95 transition-transform mb-3"
               >
                 <Camera size={28} />
                 Tomar foto
@@ -165,7 +169,7 @@ export default function RecetaPage() {
 
               <button
                 onClick={() => galeriaRef.current?.click()}
-                className="w-full bg-white border-2 border-[#1a56a4] text-[#1a56a4] text-lg font-semibold py-4 rounded-2xl flex items-center justify-center gap-3 active:scale-95 transition-transform"
+                className="w-full bg-white border-2 border-[#0E9594] text-[#0E9594] text-lg font-semibold py-4 rounded-[20px] flex items-center justify-center gap-3 active:scale-95 transition-transform"
               >
                 <ImageIcon size={22} />
                 Subir desde galería
@@ -173,7 +177,7 @@ export default function RecetaPage() {
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-center">
+              <div className="bg-red-50 border border-red-200 rounded-[16px] p-4 text-center">
                 <p className="text-red-600 font-medium">{error}</p>
                 <button
                   onClick={() => { setError(''); fileRef.current?.click() }}
@@ -188,23 +192,24 @@ export default function RecetaPage() {
 
         {/* Procesando */}
         {procesando && (
-          <div className="bg-white rounded-3xl p-10 shadow-sm border border-gray-100 text-center">
-            <Loader2 size={48} className="animate-spin text-[#1a56a4] mx-auto mb-5" />
-            <h2 className="text-xl font-bold text-gray-800 mb-2">KORA está leyendo tu receta…</h2>
-            <p className="text-base text-gray-400">Puede tardar 10–15 segundos</p>
+          <div className="bg-white rounded-[20px] p-10 text-center">
+            <Loader2 size={48} className="animate-spin text-[#0E9594] mx-auto mb-5" />
+            <h2 className="text-xl font-bold text-[#0E1B2A] mb-2">KORA está leyendo tu receta…</h2>
+            <p className="text-base text-[#5B6B7C]">Puede tardar 10–15 segundos</p>
           </div>
         )}
 
         {/* Medicamentos detectados */}
         {medicamentos.length > 0 && (
           <>
-            <div className="bg-[#e8f0fc] rounded-2xl p-4 flex items-center gap-3 border border-[#1a56a4]/20">
-              <CheckCircle2 className="text-[#1a56a4] shrink-0" size={22} />
+            {/* Disclaimer banner */}
+            <div className="bg-[#E6F4F4] border border-[#0E9594]/20 rounded-[16px] p-4 flex items-start gap-3">
+              <Info className="text-[#0E9594] shrink-0 mt-0.5" size={20} />
               <div>
-                <p className="text-[#1a56a4] font-semibold">
+                <p className="text-[#0E9594] font-semibold">
                   KORA encontró {medicamentos.length} medicamento{medicamentos.length > 1 ? 's' : ''}. Revisa y corrige si hace falta.
                 </p>
-                <p className="text-[#1a56a4]/70 text-sm mt-1">
+                <p className="text-[#0E9594]/70 text-sm mt-1">
                   La lectura es automática (IA): revisa que todo esté correcto antes de confirmar.
                 </p>
               </div>
@@ -212,39 +217,39 @@ export default function RecetaPage() {
 
             <div className="flex flex-col gap-3">
               {medicamentos.map((med, idx) => (
-                <div key={idx} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <div key={idx} className="bg-white rounded-[20px] p-5 border border-[#E5EAF0] shadow-sm">
                   {editandoIdx === idx ? (
                     <div className="flex flex-col gap-3">
                       <input
-                        className="border border-gray-200 rounded-xl px-3 py-2 text-base font-semibold"
+                        className="border border-[#E5EAF0] rounded-[12px] px-3 py-2 text-base font-semibold text-[#0E1B2A] focus:outline-none focus:border-[#0E9594]"
                         value={med.nombre}
                         onChange={e => actualizarCampo(idx, 'nombre', e.target.value)}
                         placeholder="Nombre del medicamento"
                       />
                       <div className="grid grid-cols-2 gap-2">
                         <input
-                          className="border border-gray-200 rounded-xl px-3 py-2 text-sm"
+                          className="border border-[#E5EAF0] rounded-[12px] px-3 py-2 text-sm text-[#0E1B2A] focus:outline-none focus:border-[#0E9594]"
                           value={med.dosis}
                           onChange={e => actualizarCampo(idx, 'dosis', e.target.value)}
                           placeholder="Dosis (ej: 500mg)"
                         />
                         <input
                           type="number"
-                          className="border border-gray-200 rounded-xl px-3 py-2 text-sm"
+                          className="border border-[#E5EAF0] rounded-[12px] px-3 py-2 text-sm text-[#0E1B2A] focus:outline-none focus:border-[#0E9594]"
                           value={med.frecuencia_horas}
                           onChange={e => actualizarCampo(idx, 'frecuencia_horas', Number(e.target.value))}
                           placeholder="Cada X horas"
                         />
                       </div>
                       <input
-                        className="border border-gray-200 rounded-xl px-3 py-2 text-sm"
+                        className="border border-[#E5EAF0] rounded-[12px] px-3 py-2 text-sm text-[#0E1B2A] focus:outline-none focus:border-[#0E9594]"
                         value={med.instrucciones_especiales ?? ''}
                         onChange={e => actualizarCampo(idx, 'instrucciones_especiales', e.target.value || null)}
                         placeholder="Instrucciones especiales (opcional)"
                       />
                       <button
                         onClick={() => setEditandoIdx(null)}
-                        className="bg-[#1a56a4] text-white py-2 rounded-xl text-sm font-semibold"
+                        className="bg-[#0B2A4A] text-white py-2 rounded-[12px] text-sm font-semibold"
                       >
                         Listo
                       </button>
@@ -252,27 +257,27 @@ export default function RecetaPage() {
                   ) : (
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
-                        <p className="text-lg font-bold text-gray-800">{med.nombre}</p>
-                        <p className="text-sm text-gray-500 mt-0.5">{med.dosis}</p>
-                        <p className="text-sm text-gray-400 flex items-center gap-1 mt-1">
+                        <p className="text-lg font-bold text-[#0E1B2A]">{med.nombre}</p>
+                        <p className="text-sm text-[#5B6B7C] mt-0.5">{med.dosis}</p>
+                        <p className="text-sm text-[#5B6B7C] flex items-center gap-1 mt-1">
                           <Clock size={13} />
                           Cada {med.frecuencia_horas}h
                           {med.duracion_dias && ` · ${med.duracion_dias} días`}
                         </p>
                         {med.instrucciones_especiales && (
-                          <p className="text-xs text-[#1a56a4] mt-1">ℹ️ {med.instrucciones_especiales}</p>
+                          <p className="text-xs text-[#0E9594] mt-1">ℹ️ {med.instrucciones_especiales}</p>
                         )}
                       </div>
                       <div className="flex flex-col gap-2">
                         <button
                           onClick={() => setEditandoIdx(idx)}
-                          className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors"
+                          className="p-2 rounded-[12px] bg-gray-100 hover:bg-gray-200 transition-colors"
                         >
-                          <Pencil size={15} className="text-gray-500" />
+                          <Pencil size={15} className="text-[#5B6B7C]" />
                         </button>
                         <button
                           onClick={() => eliminar(idx)}
-                          className="p-2 rounded-xl bg-red-50 hover:bg-red-100 transition-colors"
+                          className="p-2 rounded-[12px] bg-red-50 hover:bg-red-100 transition-colors"
                         >
                           <Trash2 size={15} className="text-red-400" />
                         </button>
@@ -286,7 +291,7 @@ export default function RecetaPage() {
             <button
               onClick={confirmar}
               disabled={confirming || medicamentos.length === 0}
-              className="w-full bg-[#22c55e] hover:bg-[#16a34a] text-white text-xl font-bold py-5 rounded-2xl flex items-center justify-center gap-3 active:scale-95 transition-all shadow-md disabled:opacity-50"
+              className="w-full bg-[#16A571] text-white text-xl font-bold py-5 rounded-[20px] flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50"
             >
               <CheckCircle2 size={26} />
               {confirming ? 'Guardando...' : 'Confirmar mi plan de medicación'}
@@ -294,7 +299,7 @@ export default function RecetaPage() {
 
             <button
               onClick={() => { setMedicamentos([]); setError('') }}
-              className="w-full text-center text-sm text-gray-400 py-2 underline"
+              className="w-full text-center text-sm text-[#5B6B7C] py-2 underline"
             >
               Volver a fotografiar
             </button>

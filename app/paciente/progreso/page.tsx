@@ -11,6 +11,8 @@ import {
 } from 'recharts'
 import { calcularRacha, calcularAdherencia, mensajeHito } from '@/lib/progreso'
 
+export const dynamic = 'force-dynamic'
+
 interface Registro {
   fecha: string
   tomo_medicamento: boolean | null

@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = createAdminClient()
     const resultado = await limpiarDemo(supabase)
-    return NextResponse.json({ ok: true, ...resultado })
+    return NextResponse.json(resultado)
   } catch (error) {
     const detalle = error instanceof Error ? error.message : 'Error desconocido'
     console.error('Error en limpiar-demo:', detalle)

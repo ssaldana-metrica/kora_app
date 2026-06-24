@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ScanLine } from 'lucide-react'
 
 export default function EscanearQR() {
   const router = useRouter()
@@ -42,22 +42,32 @@ export default function EscanearQR() {
   }, [router])
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-[#0d3d7a] text-white px-4 py-4 flex items-center gap-3">
-        <Link href="/medico/dashboard" className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+    <div className="min-h-screen bg-[#F4F7FB]">
+      {/* Navy header */}
+      <header className="bg-[#0d3d7a] text-white px-4 py-5 flex items-center gap-3 shadow-md">
+        <Link
+          href="/medico/dashboard"
+          className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+        >
           <ArrowLeft size={18} />
         </Link>
         <div>
-          <h1 className="font-bold text-lg">Escanear QR del paciente</h1>
-          <p className="text-blue-200 text-sm">Apunta al código QR del paciente</p>
+          <h1 className="font-bold text-lg leading-tight">Escanear QR del paciente</h1>
+          <p className="text-blue-200 text-xs">Apunta al código QR del paciente</p>
         </div>
       </header>
 
-      <main className="max-w-md mx-auto px-4 py-8">
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+      <main className="max-w-md mx-auto px-4 py-8 space-y-4">
+        {/* White card wrapping the scanner */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <ScanLine size={18} className="text-teal-600" />
+            <span className="text-sm font-semibold text-[#0d3d7a]">Lector de QR</span>
+          </div>
           <div id="qr-reader" />
         </div>
-        <p className="text-center text-sm text-gray-400 mt-4">
+
+        <p className="text-center text-sm text-gray-400 px-2">
           El paciente debe mostrar su QR desde su perfil en KORA
         </p>
       </main>

@@ -27,6 +27,8 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 
+export const dynamic = 'force-dynamic'
+
 interface Registro {
   id: string
   fecha: string           // columna date

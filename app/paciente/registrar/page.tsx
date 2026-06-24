@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react'
 import { trackEvent } from '@/lib/tracking'
 
+export const dynamic = 'force-dynamic'
+
 interface FormData {
   bienestar_general: number | null
   tomo_medicamento: boolean | null

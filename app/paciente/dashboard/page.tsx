@@ -22,6 +22,8 @@ import {
 } from 'lucide-react'
 import { calcularRacha } from '@/lib/progreso'
 
+export const dynamic = 'force-dynamic'
+
 interface Profile {
   nombre: string
   email: string
