@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Heart, Loader2 } from 'lucide-react'
@@ -19,6 +19,32 @@ function LoginForm() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  // El rol vive en `profiles` (fuente de verdad), no siempre en el JWT.
+  // Por eso lo resolvemos aquí (cliente), no en el middleware.
+  async function rutaSegunRol(userId: string) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single()
+    return profile?.role === 'medico' ? '/medico/dashboard' : '/paciente/dashboard'
+  }
+
+  // Si ya hay sesión activa al entrar a /login, mandamos al dashboard correcto
+  // según su rol real. Esto reemplaza el redirect que antes hacía el middleware.
+  useEffect(() => {
+    let cancelado = false
+    async function comprobarSesion() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user && !cancelado) {
+        router.replace(await rutaSegunRol(user.id))
+      }
+    }
+    comprobarSesion()
+    return () => { cancelado = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
@@ -32,19 +58,8 @@ function LoginForm() {
       return
     }
 
-    // Obtener rol del usuario
     const { data: { user } } = await supabase.auth.getUser()
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user!.id)
-      .single()
-
-    if (profile?.role === 'medico') {
-      router.push('/medico/dashboard')
-    } else {
-      router.push('/paciente/dashboard')
-    }
+    router.push(await rutaSegunRol(user!.id))
   }
 
   return (

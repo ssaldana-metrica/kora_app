@@ -10,11 +10,12 @@ import { NextResponse, type NextRequest } from 'next/server'
  *
  * - `getSession()` lee el JWT directamente de la cookie (no llama a
  *   /auth/v1/user). Solo refresca el token si ya expiró.
- * - El rol se lee de los claims del JWT (`user_metadata.role`), nunca
- *   de la tabla `profiles`.
- * - El matcher (abajo) limita la ejecución a las rutas que de verdad
- *   necesitan auth: protegidas + login/register. Assets, API, landing y
- *   páginas públicas quedan fuera para reducir invocaciones.
+ * - El middleware NO decide el rol: el rol vive en `profiles` (fuente de
+ *   verdad) y no siempre está en el JWT. La redirección "ya logueado →
+ *   su dashboard" la resuelve la página /login en cliente. Aquí solo
+ *   protegemos las rutas que exigen sesión.
+ * - El matcher (abajo) limita la ejecución solo a rutas protegidas.
+ *   Login/register, assets, API, landing y públicas quedan fuera.
  */
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -43,30 +44,17 @@ export async function middleware(request: NextRequest) {
   // Lectura ligera del JWT desde la cookie. Sin red en el camino normal.
   const { data: { session } } = await supabase.auth.getSession()
 
-  const { pathname } = request.nextUrl
-  const isProtected =
-    pathname.startsWith('/paciente') || pathname.startsWith('/medico')
-
-  // Sin sesión + ruta protegida → login
-  if (!session && isProtected) {
+  // Sin sesión en una ruta protegida → login. (El matcher ya garantiza
+  // que solo llegamos aquí en /paciente/* y /medico/*.)
+  if (!session) {
     return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  // Con sesión + en login/register → su dashboard.
-  // El rol sale del JWT (user_metadata/app_metadata), sin tocar la BD.
-  if (session && (pathname === '/login' || pathname === '/register')) {
-    const role =
-      session.user.user_metadata?.role ?? session.user.app_metadata?.role
-    const destino =
-      role === 'medico' ? '/medico/dashboard' : '/paciente/dashboard'
-    return NextResponse.redirect(new URL(destino, request.url))
   }
 
   return supabaseResponse
 }
 
 export const config = {
-  // Solo donde se necesita auth. Excluye API, assets, landing y públicas
-  // (no aparecen aquí, así que el middleware ni se invoca para ellas).
-  matcher: ['/paciente/:path*', '/medico/:path*', '/login', '/register'],
+  // Solo rutas protegidas. Login/register se resuelven en cliente; API,
+  // assets, landing y públicas ni invocan el middleware.
+  matcher: ['/paciente/:path*', '/medico/:path*'],
 }
