@@ -45,7 +45,8 @@ export async function middleware(request: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession()
 
   // Sin sesión en una ruta protegida → login. (El matcher ya garantiza
-  // que solo llegamos aquí en /paciente/* y /medico/*.)
+  // que solo llegamos aquí en /paciente/*, /medico/* y /admin.)
+  // El control de rol/admin fino lo hace cada página/API server-side.
   if (!session) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
@@ -56,5 +57,5 @@ export async function middleware(request: NextRequest) {
 export const config = {
   // Solo rutas protegidas. Login/register se resuelven en cliente; API,
   // assets, landing y públicas ni invocan el middleware.
-  matcher: ['/paciente/:path*', '/medico/:path*'],
+  matcher: ['/paciente/:path*', '/medico/:path*', '/admin/:path*'],
 }

@@ -24,9 +24,10 @@ function LoginForm() {
   async function rutaSegunRol(userId: string) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, es_admin')
       .eq('id', userId)
       .single()
+    if (profile?.es_admin) return '/admin'
     return profile?.role === 'medico' ? '/medico/dashboard' : '/paciente/dashboard'
   }
 
